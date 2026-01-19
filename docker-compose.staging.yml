@@ -1,0 +1,126 @@
+# Docker Compose - Staging Environment
+# Usage: docker compose -f docker-compose.staging.yml up -d
+
+services:
+  # PostgreSQL Database (staging uses containerized DB)
+  postgres:
+    image: postgres:15-alpine
+    container_name: ff-postgres-staging
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-familyfinance}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME:-familyfinance_staging}
+    volumes:
+      - postgres_staging_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-familyfinance}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    networks:
+      - ff-staging-network
+
+  # Traefik Reverse Proxy
+  traefik:
+    image: traefik:v3.0
+    container_name: ff-traefik-staging
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:ro
+      - ./infra/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./infra/traefik/dynamic:/etc/traefik/dynamic:ro
+      - traefik_staging_letsencrypt:/letsencrypt
+    environment:
+      - ACME_EMAIL=${ACME_EMAIL}
+      - TRAEFIK_DASHBOARD_USER=${TRAEFIK_DASHBOARD_USER}
+    networks:
+      - ff-staging-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=Host(`traefik.staging.${DOMAIN}`)"
+      - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.routers.dashboard.middlewares=dashboard-auth@file"
+      - "traefik.http.routers.dashboard.tls.certresolver=letsencrypt"
+
+  # API Service
+  api:
+    image: gcr.io/${GCP_PROJECT_ID}/family-finance:${VERSION:-staging}
+    container_name: ff-api-staging
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - ENVIRONMENT=staging
+      - DEBUG=true
+      - DATABASE_URL=postgresql+asyncpg://${DB_USER:-familyfinance}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-familyfinance_staging}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - GCS_BUCKET_NAME=${GCS_BUCKET_NAME}
+      - GCS_PROJECT_ID=${GCS_PROJECT_ID}
+      - CORS_ORIGINS=https://app.staging.${DOMAIN},https://staging.${DOMAIN}
+      - EXCHANGE_RATE_API_KEY=${EXCHANGE_RATE_API_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 450M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/ready"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - ff-staging-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=Host(`api.staging.${DOMAIN}`)"
+      - "traefik.http.routers.api.entrypoints=websecure"
+      - "traefik.http.routers.api.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.api.middlewares=rate-limit@file,security-headers@file"
+      - "traefik.http.services.api.loadbalancer.server.port=8000"
+
+  # Frontend (Flutter Web)
+  frontend:
+    image: gcr.io/${GCP_PROJECT_ID}/family-finance-frontend:${VERSION:-staging}
+    container_name: ff-frontend-staging
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 128M
+    networks:
+      - ff-staging-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`app.staging.${DOMAIN}`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
+
+volumes:
+  postgres_staging_data:
+  traefik_staging_letsencrypt:
+
+networks:
+  ff-staging-network:
+    driver: bridge

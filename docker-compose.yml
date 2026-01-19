@@ -1,0 +1,91 @@
+# =============================================================================
+# FamilyFinance - Docker Compose (Production)
+# Location: /srv/scram-apps/Family-Finance/docker-compose.yml
+# =============================================================================
+
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: family-finance-api
+    image: scram2k/family-finance:latest
+    restart: unless-stopped
+
+    # Environment configuration
+    env_file:
+      - .env
+
+    # Volume mounts (read-only where possible)
+    volumes:
+      - ./secrets/gcp-key.json:/app/secrets/gcp-key.json:ro
+
+    # Network configuration
+    networks:
+      - traefik-public
+      - internal-db-net
+
+    # Resource limits (Critical for shared infrastructure)
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'      # Max 50% of one core
+          memory: 450M      # Hard limit (below 512MB threshold)
+        reservations:
+          cpus: '0.25'
+          memory: 200M      # Guaranteed minimum
+
+    # Logging configuration (prevent disk fill)
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    # Traefik labels for reverse proxy
+    labels:
+      # Enable Traefik
+      - "traefik.enable=true"
+
+      # Router configuration
+      - "traefik.http.routers.family.rule=Host(`Family-Finance.scram2k.com`)"
+      - "traefik.http.routers.family.entrypoints=websecure"
+      - "traefik.http.routers.family.tls.certresolver=letsencrypt"
+
+      # Service configuration
+      - "traefik.http.services.family.loadbalancer.server.port=8000"
+
+      # Middlewares for security
+      - "traefik.http.routers.family.middlewares=secure-headers,compress-res,rate-limit"
+
+      # Security headers middleware
+      - "traefik.http.middlewares.secure-headers.headers.sslredirect=true"
+      - "traefik.http.middlewares.secure-headers.headers.stsSeconds=31536000"
+      - "traefik.http.middlewares.secure-headers.headers.stsIncludeSubdomains=true"
+      - "traefik.http.middlewares.secure-headers.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.secure-headers.headers.browserXssFilter=true"
+      - "traefik.http.middlewares.secure-headers.headers.frameDeny=true"
+
+      # Compression middleware
+      - "traefik.http.middlewares.compress-res.compress=true"
+
+      # Rate limiting middleware
+      - "traefik.http.middlewares.rate-limit.ratelimit.average=100"
+      - "traefik.http.middlewares.rate-limit.ratelimit.burst=50"
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/health', timeout=2).raise_for_status()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+# External networks (managed by infrastructure)
+networks:
+  traefik-public:
+    external: true
+  internal-db-net:
+    external: true

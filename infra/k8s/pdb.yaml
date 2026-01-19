@@ -1,0 +1,16 @@
+---
+# Pod Disruption Budget
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: family-finance-api-pdb
+  namespace: family-finance
+  labels:
+    app.kubernetes.io/name: family-finance
+    app.kubernetes.io/component: pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: family-finance
+      app.kubernetes.io/component: api

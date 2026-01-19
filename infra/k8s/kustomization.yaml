@@ -1,0 +1,39 @@
+# Kustomization for FamilyFinance Kubernetes deployment
+# Usage: kubectl apply -k infra/k8s/
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: family-finance
+
+# Resources to deploy
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - secret.yaml
+  - deployment.yaml
+  - service.yaml
+  - ingress.yaml
+  - pdb.yaml
+
+# Common labels for all resources
+commonLabels:
+  app.kubernetes.io/name: family-finance
+  app.kubernetes.io/managed-by: kustomize
+
+# Common annotations
+commonAnnotations:
+  app.kubernetes.io/version: "1.0.0"
+
+# Image configuration
+images:
+  - name: gcr.io/PROJECT_ID/family-finance
+    newTag: latest
+
+# Config map generator (for environment-specific values)
+configMapGenerator:
+  - name: family-finance-config
+    behavior: merge
+    literals:
+      - ENVIRONMENT=production
+      - LOG_LEVEL=INFO
