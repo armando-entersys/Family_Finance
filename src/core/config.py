@@ -49,6 +49,10 @@ class Settings(BaseSettings):
         "https://Family-Finance.scram2k.com",
         "http://localhost:3000",
     ]
+    CORS_ORIGINS: List[str] = [
+        "https://Family-Finance.scram2k.com",
+        "http://localhost:3000",
+    ]
 
     # Currency
     base_currency: str = "MXN"
