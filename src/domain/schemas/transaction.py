@@ -16,7 +16,7 @@ TransactionType = Literal["INCOME", "EXPENSE", "DEBT", "SAVING"]
 class TransactionCreate(BaseModel):
     """Schema for creating a transaction."""
 
-    amount_original: Decimal = Field(..., gt=0, decimal_places=4)
+    amount_original: Decimal = Field(..., gt=0)
     currency_code: str = Field(default="MXN", max_length=3)
     exchange_rate: Decimal = Field(default=Decimal("1.0"), gt=0)
     type: TransactionType
@@ -34,7 +34,7 @@ class TransactionCreate(BaseModel):
 class TransactionUpdate(BaseModel):
     """Schema for updating a transaction."""
 
-    amount_original: Optional[Decimal] = Field(None, gt=0, decimal_places=4)
+    amount_original: Optional[Decimal] = Field(None, gt=0)
     currency_code: Optional[str] = Field(None, max_length=3)
     exchange_rate: Optional[Decimal] = Field(None, gt=0)
     category_id: Optional[int] = None

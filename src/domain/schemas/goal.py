@@ -20,7 +20,7 @@ class GoalCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
     description: Optional[str] = Field(None, max_length=500)
     icon: str = Field(default="piggy_bank", max_length=50)
-    target_amount: Decimal = Field(..., gt=0, decimal_places=4)
+    target_amount: Decimal = Field(..., gt=0)
     currency_code: str = Field(default="MXN", max_length=3)
     deadline: Optional[datetime] = None
     goal_type: GoalType = "FAMILY"
@@ -62,7 +62,7 @@ class GoalResponse(BaseModel):
 class ContributionCreate(BaseModel):
     """Schema for creating a contribution to a goal."""
 
-    amount: Decimal = Field(..., gt=0, decimal_places=4)
+    amount: Decimal = Field(..., gt=0)
     is_withdrawal: bool = False
     notes: Optional[str] = Field(None, max_length=500)
 

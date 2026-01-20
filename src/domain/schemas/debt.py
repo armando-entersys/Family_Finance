@@ -20,7 +20,7 @@ class DebtCreate(BaseModel):
     creditor: str = Field(..., min_length=1, max_length=100)
     description: Optional[str] = Field(None, max_length=500)
     debt_type: DebtType = "PERSONAL"
-    total_amount: Decimal = Field(..., gt=0, decimal_places=4)
+    total_amount: Decimal = Field(..., gt=0)
     currency_code: str = Field(default="MXN", max_length=3)
     exchange_rate_fixed: Decimal = Field(default=Decimal("1.0"), gt=0)
     interest_rate: Optional[Decimal] = Field(None, ge=0, le=100)
@@ -63,7 +63,7 @@ class DebtResponse(BaseModel):
 class PaymentCreate(BaseModel):
     """Schema for creating a debt payment (BR-004: Immutable)."""
 
-    amount: Decimal = Field(..., gt=0, decimal_places=4)
+    amount: Decimal = Field(..., gt=0)
     payment_date: Optional[datetime] = None
     notes: Optional[str] = Field(None, max_length=500)
 
@@ -72,7 +72,7 @@ class PaymentAdjustment(BaseModel):
     """Schema for payment adjustment (counter-entry)."""
 
     original_payment_id: uuid.UUID
-    adjustment_amount: Decimal = Field(..., decimal_places=4)
+    adjustment_amount: Decimal = Field(...)
     notes: str = Field(..., min_length=1, max_length=500)
 
 
