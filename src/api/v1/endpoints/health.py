@@ -12,7 +12,9 @@ from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.core.config import settings
+from src.core.config import get_settings
+
+settings = get_settings()
 from src.infra.database import get_db
 
 router = APIRouter(tags=["Health"])
