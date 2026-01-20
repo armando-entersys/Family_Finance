@@ -25,7 +25,13 @@ class Settings(BaseSettings):
     debug: bool = False
     APP_VERSION: str = "1.0.0"
     ENVIRONMENT: str = "development"
-    ALLOWED_HOSTS: List[str] = ["localhost", "127.0.0.1"]
+    ALLOWED_HOSTS: List[str] = [
+        "localhost",
+        "127.0.0.1",
+        "Family-Finance.scram2k.com",
+        "family-finance-api",  # Docker internal hostname
+        "*",  # Allow all for Docker health checks (behind Traefik)
+    ]
     DEBUG: bool = False
 
     # Database
