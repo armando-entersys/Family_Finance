@@ -61,6 +61,10 @@ async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
             await session.close()
 
 
+# Alias for compatibility
+get_db = get_db_session
+
+
 @asynccontextmanager
 async def get_db_context() -> AsyncGenerator[AsyncSession, None]:
     """
