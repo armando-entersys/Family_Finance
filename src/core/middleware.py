@@ -35,8 +35,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "magnetometer=(), microphone=(), payment=(), usb=()"
         )
 
-        # Remove server header
-        response.headers.pop("server", None)
+        # Remove server header (MutableHeaders doesn't support pop)
+        if "server" in response.headers:
+            del response.headers["server"]
 
         # Add request ID to response headers
         request_id = request_id_ctx.get()
