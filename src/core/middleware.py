@@ -11,7 +11,9 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from src.core.config import settings
+from src.core.config import get_settings
+
+settings = get_settings()
 from src.core.logging import get_logger, request_id_ctx, user_id_ctx
 
 logger = get_logger(__name__)

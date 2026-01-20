@@ -12,7 +12,9 @@ from typing import Any
 import structlog
 from structlog.types import EventDict, Processor
 
-from src.core.config import settings
+from src.core.config import get_settings
+
+settings = get_settings()
 
 # Context variables for request tracking
 request_id_ctx: ContextVar[str | None] = ContextVar("request_id", default=None)
