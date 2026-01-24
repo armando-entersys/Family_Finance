@@ -48,7 +48,7 @@ def _debt_to_response(debt, amount_in_base: Decimal = None) -> DebtResponse:
     )
 
 
-@router.post("/", response_model=DebtResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=DebtResponse, status_code=status.HTTP_201_CREATED)
 async def create_debt(
     data: DebtCreate,
     current_user: CurrentUser,
@@ -70,7 +70,7 @@ async def create_debt(
     return _debt_to_response(debt)
 
 
-@router.get("/", response_model=List[DebtResponse])
+@router.get("", response_model=List[DebtResponse])
 async def list_debts(
     current_user: CurrentUser,
     db: DbSession,

@@ -21,7 +21,7 @@ from src.services.goal_service import GoalService
 router = APIRouter(prefix="/goals", tags=["Goals (Savings)"])
 
 
-@router.post("/", response_model=GoalResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=GoalResponse, status_code=status.HTTP_201_CREATED)
 async def create_goal(
     data: GoalCreate,
     current_user: CurrentUser,
@@ -44,7 +44,7 @@ async def create_goal(
     return goal
 
 
-@router.get("/", response_model=List[GoalResponse])
+@router.get("", response_model=List[GoalResponse])
 async def list_goals(
     current_user: CurrentUser,
     db: DbSession,

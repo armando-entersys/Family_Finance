@@ -22,7 +22,7 @@ from src.services.storage_service import StorageService
 router = APIRouter(prefix="/transactions", tags=["Transactions"])
 
 
-@router.post("/", response_model=TransactionResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=TransactionResponse, status_code=status.HTTP_201_CREATED)
 async def create_transaction(
     data: TransactionCreate,
     current_user: CurrentUser,
@@ -45,7 +45,7 @@ async def create_transaction(
     return transaction
 
 
-@router.get("/", response_model=TransactionList)
+@router.get("", response_model=TransactionList)
 async def list_transactions(
     current_user: CurrentUser,
     db: DbSession,
