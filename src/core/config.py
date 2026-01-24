@@ -54,10 +54,16 @@ class Settings(BaseSettings):
     cors_origins: List[str] = [
         "https://Family-Finance.scram2k.com",
         "http://localhost:3000",
+        "http://localhost:8081",
+        "http://localhost:8082",
+        "http://localhost:19006",
     ]
     CORS_ORIGINS: List[str] = [
         "https://Family-Finance.scram2k.com",
         "http://localhost:3000",
+        "http://localhost:8081",
+        "http://localhost:8082",
+        "http://localhost:19006",
     ]
 
     # Currency
