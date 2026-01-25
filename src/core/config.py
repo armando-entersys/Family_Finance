@@ -50,19 +50,23 @@ class Settings(BaseSettings):
     gcs_bucket_name: str = "family-finance-prod"
     gcs_credentials_path: str = "/app/secrets/gcp-key.json"
 
-    # CORS
+    # CORS - include both case variants of domain (browsers lowercase domains)
     cors_origins: List[str] = [
         "https://Family-Finance.scram2k.com",
+        "https://family-finance.scram2k.com",
         "http://localhost:3000",
         "http://localhost:8081",
         "http://localhost:8082",
+        "http://localhost:8083",
         "http://localhost:19006",
     ]
     CORS_ORIGINS: List[str] = [
         "https://Family-Finance.scram2k.com",
+        "https://family-finance.scram2k.com",
         "http://localhost:3000",
         "http://localhost:8081",
         "http://localhost:8082",
+        "http://localhost:8083",
         "http://localhost:19006",
     ]
 
