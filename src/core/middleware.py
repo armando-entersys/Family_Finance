@@ -152,10 +152,15 @@ def setup_middleware(app: FastAPI) -> None:
     """Configure all middleware for the application."""
 
     # CORS - must be first
+    # In development, allow all origins for easier testing
+    cors_origins = settings.CORS_ORIGINS
+    if settings.ENVIRONMENT == "development" or settings.debug:
+        cors_origins = ["*"]
+
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.CORS_ORIGINS,
-        allow_credentials=True,
+        allow_origins=cors_origins,
+        allow_credentials=True if cors_origins != ["*"] else False,
         allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
         allow_headers=["*"],
         expose_headers=["X-Request-ID", "X-Total-Count"],

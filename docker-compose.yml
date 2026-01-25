@@ -83,6 +83,62 @@ services:
       retries: 3
       start_period: 10s
 
+  # Frontend Web App (Expo)
+  frontend:
+    build:
+      context: ./mobile
+      dockerfile: Dockerfile
+      args:
+        EXPO_PUBLIC_API_URL: https://Family-Finance.scram2k.com
+        EXPO_PUBLIC_GEMINI_API_KEY: ${EXPO_PUBLIC_GEMINI_API_KEY:-}
+    container_name: family-finance-web
+    image: scram2k/family-finance-web:latest
+    restart: unless-stopped
+
+    # Network configuration
+    networks:
+      - traefik-public
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+        reservations:
+          cpus: '0.10'
+          memory: 64M
+
+    # Logging configuration
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+    # Traefik labels for reverse proxy
+    labels:
+      - "traefik.enable=true"
+
+      # Router configuration - app subdomain
+      - "traefik.http.routers.family-web.rule=Host(`app.Family-Finance.scram2k.com`)"
+      - "traefik.http.routers.family-web.entrypoints=websecure"
+      - "traefik.http.routers.family-web.tls.certresolver=letsencrypt"
+
+      # Service configuration
+      - "traefik.http.services.family-web.loadbalancer.server.port=80"
+
+      # Security middlewares
+      - "traefik.http.routers.family-web.middlewares=secure-headers,compress-res"
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
 # External networks (managed by infrastructure)
 networks:
   traefik-public:

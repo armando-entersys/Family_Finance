@@ -51,23 +51,38 @@ class Settings(BaseSettings):
     gcs_credentials_path: str = "/app/secrets/gcp-key.json"
 
     # CORS - include both case variants of domain (browsers lowercase domains)
+    # In development, we allow all origins with "*"
     cors_origins: List[str] = [
         "https://Family-Finance.scram2k.com",
         "https://family-finance.scram2k.com",
+        "https://app.Family-Finance.scram2k.com",
+        "https://app.family-finance.scram2k.com",
         "http://localhost:3000",
+        "http://localhost:8000",
+        "http://localhost:8080",
         "http://localhost:8081",
         "http://localhost:8082",
         "http://localhost:8083",
+        "http://localhost:19000",
         "http://localhost:19006",
+        "http://127.0.0.1:8081",
+        "http://127.0.0.1:19006",
     ]
     CORS_ORIGINS: List[str] = [
         "https://Family-Finance.scram2k.com",
         "https://family-finance.scram2k.com",
+        "https://app.Family-Finance.scram2k.com",
+        "https://app.family-finance.scram2k.com",
         "http://localhost:3000",
+        "http://localhost:8000",
+        "http://localhost:8080",
         "http://localhost:8081",
         "http://localhost:8082",
         "http://localhost:8083",
+        "http://localhost:19000",
         "http://localhost:19006",
+        "http://127.0.0.1:8081",
+        "http://127.0.0.1:19006",
     ]
 
     # Currency

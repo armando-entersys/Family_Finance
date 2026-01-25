@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom base styles */
+@layer base {
+  * {
+    border-color: theme('colors.gray.200');
+  }
+}
+
+/* Custom component classes */
+@layer components {
+  .btn-primary {
+    @apply bg-primary-600 text-white px-4 py-3 rounded-xl font-semibold;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-100 text-gray-800 px-4 py-3 rounded-xl font-semibold;
+  }
+
+  .btn-danger {
+    @apply bg-danger-500 text-white px-4 py-3 rounded-xl font-semibold;
+  }
+
+  .input {
+    @apply bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900;
+  }
+
+  .card {
+    @apply bg-white rounded-2xl p-4 shadow-sm;
+  }
+
+  .amount-income {
+    @apply text-success-600;
+  }
+
+  .amount-expense {
+    @apply text-danger-500;
+  }
+}
