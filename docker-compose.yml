@@ -48,6 +48,8 @@ services:
     labels:
       # Enable Traefik
       - "traefik.enable=true"
+      # Use traefik-public network for routing (container is in multiple networks)
+      - "traefik.docker.network=traefik-public"
 
       # Router configuration
       - "traefik.http.routers.family.rule=Host(`Family-Finance.scram2k.com`)"
@@ -119,6 +121,7 @@ services:
     # Traefik labels for reverse proxy
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=traefik-public"
 
       # Router configuration - app subdomain
       - "traefik.http.routers.family-web.rule=Host(`app.Family-Finance.scram2k.com`)"
