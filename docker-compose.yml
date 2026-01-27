@@ -123,8 +123,8 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik-public"
 
-      # Router configuration - app subdomain
-      - "traefik.http.routers.family-web.rule=Host(`app.Family-Finance.scram2k.com`)"
+      # Router configuration - app subdomain (lowercase for Cloudflare compatibility)
+      - "traefik.http.routers.family-web.rule=Host(`app.family-finance.scram2k.com`)"
       - "traefik.http.routers.family-web.entrypoints=websecure"
       - "traefik.http.routers.family-web.tls.certresolver=letsencrypt"
 
