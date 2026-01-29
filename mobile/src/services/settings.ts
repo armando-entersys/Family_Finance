@@ -1,47 +1,38 @@
 import api from './api';
 import { API_ENDPOINTS } from '@/constants';
 
+// Backend response types
 export interface UserSettings {
-  id: string;
-  user_id: string;
-  default_currency: string;
+  daily_summary_enabled: boolean;
+  notification_time: string;
+  preferred_currency: string;
   language: string;
-  notifications_enabled: boolean;
-  dark_mode: boolean;
-  biometric_enabled: boolean;
-  created_at: string;
-  updated_at: string;
 }
 
 export interface FamilySettings {
-  id: string;
-  name: string;
-  base_currency: string;
-  language: string;
-  created_at: string;
-  updated_at: string;
+  month_close_day: number;
+  default_currency: string;
+  budget_warning_threshold: number;
 }
 
 export interface FamilyMember {
   id: string;
   email: string;
   role: 'ADMIN' | 'MEMBER';
-  joined_at: string;
   is_active: boolean;
 }
 
 export interface UpdateUserSettingsData {
-  default_currency?: string;
+  daily_summary_enabled?: boolean;
+  notification_time?: string;
+  preferred_currency?: string;
   language?: string;
-  notifications_enabled?: boolean;
-  dark_mode?: boolean;
-  biometric_enabled?: boolean;
 }
 
 export interface UpdateFamilySettingsData {
-  name?: string;
-  base_currency?: string;
-  language?: string;
+  month_close_day?: number;
+  default_currency?: string;
+  budget_warning_threshold?: number;
 }
 
 export interface InviteMemberData {
@@ -57,7 +48,15 @@ export const getUserSettings = async (): Promise<UserSettings> => {
 
 // Update user settings
 export const updateUserSettings = async (data: UpdateUserSettingsData): Promise<UserSettings> => {
-  const response = await api.patch<UserSettings>(API_ENDPOINTS.SETTINGS_USER, data);
+  // Get current settings first to merge with updates
+  const current = await getUserSettings();
+  const merged = {
+    daily_summary_enabled: data.daily_summary_enabled ?? current.daily_summary_enabled,
+    notification_time: data.notification_time ?? current.notification_time,
+    preferred_currency: data.preferred_currency ?? current.preferred_currency,
+    language: data.language ?? current.language,
+  };
+  const response = await api.patch<UserSettings>(API_ENDPOINTS.SETTINGS_USER, merged);
   return response.data;
 };
 
@@ -69,7 +68,14 @@ export const getFamilySettings = async (): Promise<FamilySettings> => {
 
 // Update family settings (admin only)
 export const updateFamilySettings = async (data: UpdateFamilySettingsData): Promise<FamilySettings> => {
-  const response = await api.patch<FamilySettings>(API_ENDPOINTS.SETTINGS_FAMILY, data);
+  // Get current settings first to merge with updates
+  const current = await getFamilySettings();
+  const merged = {
+    month_close_day: data.month_close_day ?? current.month_close_day,
+    default_currency: data.default_currency ?? current.default_currency,
+    budget_warning_threshold: data.budget_warning_threshold ?? current.budget_warning_threshold,
+  };
+  const response = await api.patch<FamilySettings>(API_ENDPOINTS.SETTINGS_FAMILY, merged);
   return response.data;
 };
 

@@ -4,12 +4,12 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  Alert,
   Modal,
   TextInput,
   ActivityIndicator,
   Switch,
   RefreshControl,
+  Platform,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -29,6 +29,21 @@ const LANGUAGES = [
   { code: 'es', name: 'Espanol' },
   { code: 'en', name: 'English' },
 ] as const;
+
+// Web-compatible confirm dialog
+const showConfirm = (title: string, message: string, onConfirm: () => void) => {
+  if (Platform.OS === 'web') {
+    if (window.confirm(`${title}\n\n${message}`)) {
+      onConfirm();
+    }
+  } else {
+    const { Alert } = require('react-native');
+    Alert.alert(title, message, [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Confirmar', style: 'destructive', onPress: onConfirm },
+    ]);
+  }
+};
 
 export default function ProfileScreen() {
   const { user, logout } = useAuthStore();
@@ -54,7 +69,6 @@ export default function ProfileScreen() {
   // Form states
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<'MEMBER' | 'ADMIN'>('MEMBER');
-  const [newFamilyName, setNewFamilyName] = useState('');
 
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -65,29 +79,20 @@ export default function ProfileScreen() {
   };
 
   const handleLogout = () => {
-    Alert.alert(
-      'Cerrar Sesion',
-      'Estas seguro que deseas cerrar sesion?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Cerrar Sesion',
-          style: 'destructive',
-          onPress: async () => {
-            await logout();
-            router.replace('/(auth)/login');
-          },
-        },
-      ]
-    );
+    showConfirm('Cerrar Sesion', 'Estas seguro que deseas cerrar sesion?', async () => {
+      await logout();
+      router.replace('/(auth)/login');
+    });
   };
 
   const handleUpdateCurrency = async (currencyCode: string) => {
     try {
-      await updateUserSettingsMutation.mutateAsync({ default_currency: currencyCode });
+      await updateUserSettingsMutation.mutateAsync({ preferred_currency: currencyCode });
       setShowCurrencyModal(false);
     } catch (error) {
-      Alert.alert('Error', 'No se pudo actualizar la moneda');
+      if (Platform.OS === 'web') {
+        window.alert('Error: No se pudo actualizar la moneda');
+      }
     }
   };
 
@@ -96,51 +101,25 @@ export default function ProfileScreen() {
       await updateUserSettingsMutation.mutateAsync({ language: languageCode });
       setShowLanguageModal(false);
     } catch (error) {
-      Alert.alert('Error', 'No se pudo actualizar el idioma');
+      if (Platform.OS === 'web') {
+        window.alert('Error: No se pudo actualizar el idioma');
+      }
     }
   };
 
   const handleToggleNotifications = async (value: boolean) => {
     try {
-      await updateUserSettingsMutation.mutateAsync({ notifications_enabled: value });
+      await updateUserSettingsMutation.mutateAsync({ daily_summary_enabled: value });
     } catch (error) {
-      Alert.alert('Error', 'No se pudo actualizar las notificaciones');
-    }
-  };
-
-  const handleToggleDarkMode = async (value: boolean) => {
-    try {
-      await updateUserSettingsMutation.mutateAsync({ dark_mode: value });
-    } catch (error) {
-      Alert.alert('Error', 'No se pudo actualizar el modo oscuro');
-    }
-  };
-
-  const handleToggleBiometric = async (value: boolean) => {
-    try {
-      await updateUserSettingsMutation.mutateAsync({ biometric_enabled: value });
-    } catch (error) {
-      Alert.alert('Error', 'No se pudo actualizar biometricos');
-    }
-  };
-
-  const handleUpdateFamilyName = async () => {
-    if (!newFamilyName.trim()) {
-      Alert.alert('Error', 'Ingresa un nombre para la familia');
-      return;
-    }
-    try {
-      await updateFamilySettingsMutation.mutateAsync({ name: newFamilyName.trim() });
-      setShowFamilyModal(false);
-      setNewFamilyName('');
-    } catch (error) {
-      Alert.alert('Error', 'No se pudo actualizar el nombre de la familia');
+      console.error('Error updating notifications:', error);
     }
   };
 
   const handleInviteMember = async () => {
     if (!inviteEmail.trim()) {
-      Alert.alert('Error', 'Ingresa un correo electronico');
+      if (Platform.OS === 'web') {
+        window.alert('Error: Ingresa un correo electronico');
+      }
       return;
     }
     try {
@@ -148,34 +127,29 @@ export default function ProfileScreen() {
       setShowInviteModal(false);
       setInviteEmail('');
       setInviteRole('MEMBER');
-      Alert.alert('Exito', 'Invitacion enviada correctamente');
+      if (Platform.OS === 'web') {
+        window.alert('Invitacion enviada correctamente');
+      }
     } catch (error) {
-      Alert.alert('Error', 'No se pudo enviar la invitacion');
+      if (Platform.OS === 'web') {
+        window.alert('Error: No se pudo enviar la invitacion');
+      }
     }
   };
 
   const handleRemoveMember = (memberId: string, memberEmail: string) => {
-    Alert.alert(
-      'Eliminar miembro',
-      `Estas seguro que deseas eliminar a ${memberEmail}?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Eliminar',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await removeMemberMutation.mutateAsync(memberId);
-            } catch (error) {
-              Alert.alert('Error', 'No se pudo eliminar el miembro');
-            }
-          },
-        },
-      ]
-    );
+    showConfirm('Eliminar miembro', `Estas seguro que deseas eliminar a ${memberEmail}?`, async () => {
+      try {
+        await removeMemberMutation.mutateAsync(memberId);
+      } catch (error) {
+        if (Platform.OS === 'web') {
+          window.alert('Error: No se pudo eliminar el miembro');
+        }
+      }
+    });
   };
 
-  const currentCurrency = CURRENCIES.find((c) => c.code === userSettings?.default_currency) || CURRENCIES[0];
+  const currentCurrency = CURRENCIES.find((c) => c.code === userSettings?.preferred_currency) || CURRENCIES[0];
   const currentLanguage = LANGUAGES.find((l) => l.code === userSettings?.language) || LANGUAGES[0];
 
   if (loadingUserSettings) {
@@ -210,9 +184,6 @@ export default function ProfileScreen() {
               </Text>
             </View>
           </View>
-          {familySettings?.name && (
-            <Text className="text-primary-100 mt-2">Familia: {familySettings.name}</Text>
-          )}
         </View>
       </View>
 
@@ -226,10 +197,7 @@ export default function ProfileScreen() {
           <View className="bg-white rounded-2xl overflow-hidden shadow-sm">
             {/* Familia */}
             <TouchableOpacity
-              onPress={() => {
-                setNewFamilyName(familySettings?.name || '');
-                setShowFamilyModal(true);
-              }}
+              onPress={() => setShowFamilyModal(true)}
               className="flex-row items-center px-4 py-3.5 border-b border-gray-100"
             >
               <View className="w-9 h-9 bg-gray-100 rounded-full items-center justify-center mr-3">
@@ -245,9 +213,9 @@ export default function ProfileScreen() {
               <View className="w-9 h-9 bg-gray-100 rounded-full items-center justify-center mr-3">
                 <Ionicons name="notifications-outline" size={20} color="#6B7280" />
               </View>
-              <Text className="flex-1 text-gray-900 font-medium">Notificaciones</Text>
+              <Text className="flex-1 text-gray-900 font-medium">Resumen Diario</Text>
               <Switch
-                value={userSettings?.notifications_enabled ?? true}
+                value={userSettings?.daily_summary_enabled ?? true}
                 onValueChange={handleToggleNotifications}
                 trackColor={{ false: '#E5E7EB', true: '#4F46E5' }}
                 thumbColor="white"
@@ -282,42 +250,6 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Preferencias */}
-        <View className="mb-6">
-          <Text className="text-sm font-semibold text-gray-500 uppercase mb-2 px-2">
-            Preferencias
-          </Text>
-          <View className="bg-white rounded-2xl overflow-hidden shadow-sm">
-            {/* Modo Oscuro */}
-            <View className="flex-row items-center px-4 py-3.5 border-b border-gray-100">
-              <View className="w-9 h-9 bg-gray-100 rounded-full items-center justify-center mr-3">
-                <Ionicons name="moon-outline" size={20} color="#6B7280" />
-              </View>
-              <Text className="flex-1 text-gray-900 font-medium">Modo Oscuro</Text>
-              <Switch
-                value={userSettings?.dark_mode ?? false}
-                onValueChange={handleToggleDarkMode}
-                trackColor={{ false: '#E5E7EB', true: '#4F46E5' }}
-                thumbColor="white"
-              />
-            </View>
-
-            {/* Biometricos */}
-            <View className="flex-row items-center px-4 py-3.5">
-              <View className="w-9 h-9 bg-gray-100 rounded-full items-center justify-center mr-3">
-                <Ionicons name="finger-print-outline" size={20} color="#6B7280" />
-              </View>
-              <Text className="flex-1 text-gray-900 font-medium">Biometricos</Text>
-              <Switch
-                value={userSettings?.biometric_enabled ?? false}
-                onValueChange={handleToggleBiometric}
-                trackColor={{ false: '#E5E7EB', true: '#4F46E5' }}
-                thumbColor="white"
-              />
-            </View>
-          </View>
-        </View>
-
         {/* Soporte */}
         <View className="mb-6">
           <Text className="text-sm font-semibold text-gray-500 uppercase mb-2 px-2">
@@ -332,19 +264,11 @@ export default function ProfileScreen() {
               <Ionicons name="chevron-forward" size={20} color="#D1D5DB" />
             </TouchableOpacity>
 
-            <TouchableOpacity className="flex-row items-center px-4 py-3.5 border-b border-gray-100">
-              <View className="w-9 h-9 bg-gray-100 rounded-full items-center justify-center mr-3">
-                <Ionicons name="document-text-outline" size={20} color="#6B7280" />
-              </View>
-              <Text className="flex-1 text-gray-900 font-medium">Terminos y Condiciones</Text>
-              <Ionicons name="chevron-forward" size={20} color="#D1D5DB" />
-            </TouchableOpacity>
-
             <TouchableOpacity className="flex-row items-center px-4 py-3.5">
               <View className="w-9 h-9 bg-gray-100 rounded-full items-center justify-center mr-3">
-                <Ionicons name="shield-checkmark-outline" size={20} color="#6B7280" />
+                <Ionicons name="information-circle-outline" size={20} color="#6B7280" />
               </View>
-              <Text className="flex-1 text-gray-900 font-medium">Privacidad</Text>
+              <Text className="flex-1 text-gray-900 font-medium">Acerca de</Text>
               <Ionicons name="chevron-forward" size={20} color="#D1D5DB" />
             </TouchableOpacity>
           </View>
@@ -384,7 +308,7 @@ export default function ProfileScreen() {
               <TouchableOpacity
                 key={currency.code}
                 className={`flex-row items-center p-4 rounded-xl mb-2 ${
-                  userSettings?.default_currency === currency.code ? 'bg-primary-50' : 'bg-gray-50'
+                  userSettings?.preferred_currency === currency.code ? 'bg-primary-50' : 'bg-gray-50'
                 }`}
                 onPress={() => handleUpdateCurrency(currency.code)}
               >
@@ -393,7 +317,7 @@ export default function ProfileScreen() {
                   <Text className="font-semibold text-gray-900">{currency.code}</Text>
                   <Text className="text-gray-500 text-sm">{currency.name}</Text>
                 </View>
-                {userSettings?.default_currency === currency.code && (
+                {userSettings?.preferred_currency === currency.code && (
                   <Ionicons name="checkmark-circle" size={24} color="#4F46E5" />
                 )}
               </TouchableOpacity>
@@ -443,32 +367,6 @@ export default function ProfileScreen() {
                 <Ionicons name="close" size={24} color="#6B7280" />
               </TouchableOpacity>
             </View>
-
-            {/* Family Name */}
-            {isAdmin && (
-              <View className="mb-6">
-                <Text className="text-gray-600 mb-2">Nombre de la Familia</Text>
-                <View className="flex-row">
-                  <TextInput
-                    className="flex-1 bg-gray-100 rounded-xl px-4 py-3 text-gray-900 mr-2"
-                    value={newFamilyName}
-                    onChangeText={setNewFamilyName}
-                    placeholder="Mi Familia"
-                  />
-                  <TouchableOpacity
-                    className="bg-primary-600 px-4 rounded-xl items-center justify-center"
-                    onPress={handleUpdateFamilyName}
-                    disabled={updateFamilySettingsMutation.isPending}
-                  >
-                    {updateFamilySettingsMutation.isPending ? (
-                      <ActivityIndicator color="white" size="small" />
-                    ) : (
-                      <Ionicons name="checkmark" size={24} color="white" />
-                    )}
-                  </TouchableOpacity>
-                </View>
-              </View>
-            )}
 
             {/* Members List */}
             <Text className="text-gray-600 mb-2">Miembros ({familyMembers?.length || 0})</Text>
