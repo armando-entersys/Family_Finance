@@ -10,18 +10,18 @@ export const API_ENDPOINTS = {
   REFRESH: '/api/v1/auth/refresh',
   ME: '/api/v1/auth/me',
 
-  // Transactions (trailing slash needed until server fix is deployed)
-  TRANSACTIONS: '/api/v1/transactions/',
+  // Transactions
+  TRANSACTIONS: '/api/v1/transactions',
   TRANSACTION: (id: string) => `/api/v1/transactions/${id}`,
   TRANSACTION_ATTACHMENT: (id: string) => `/api/v1/transactions/${id}/attachment`,
 
-  // Goals (trailing slash needed until server fix is deployed)
-  GOALS: '/api/v1/goals/',
+  // Goals
+  GOALS: '/api/v1/goals',
   GOAL: (id: string) => `/api/v1/goals/${id}`,
   GOAL_CONTRIBUTIONS: (id: string) => `/api/v1/goals/${id}/contributions`,
 
-  // Debts (trailing slash needed until server fix is deployed)
-  DEBTS: '/api/v1/debts/',
+  // Debts
+  DEBTS: '/api/v1/debts',
   DEBTS_SUMMARY: '/api/v1/debts/summary',
   DEBT: (id: string) => `/api/v1/debts/${id}`,
   DEBT_PAYMENTS: (id: string) => `/api/v1/debts/${id}/payments`,
