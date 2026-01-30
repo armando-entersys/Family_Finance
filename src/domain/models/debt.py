@@ -31,7 +31,7 @@ class Debt(Base, TimestampMixin):
     Debt entity for tracking liabilities.
 
     Supports multi-currency with fixed exchange rate for tracking.
-    Types: BANK (TC), PERSONAL, SERVICE
+    Types: credit_card, personal_loan, mortgage, car_loan, other
     """
 
     __tablename__ = "debts"
@@ -58,7 +58,7 @@ class Debt(Base, TimestampMixin):
     debt_type: Mapped[str] = mapped_column(
         String(20),
         nullable=False,
-        default="PERSONAL",
+        default="other",
     )
 
     # Financial data
@@ -111,7 +111,7 @@ class Debt(Base, TimestampMixin):
 
     __table_args__ = (
         CheckConstraint(
-            "debt_type IN ('BANK', 'PERSONAL', 'SERVICE')",
+            "debt_type IN ('credit_card', 'personal_loan', 'mortgage', 'car_loan', 'other')",
             name="check_debt_type",
         ),
     )

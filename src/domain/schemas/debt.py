@@ -11,7 +11,7 @@ import uuid
 from pydantic import BaseModel, Field
 
 
-DebtType = Literal["BANK", "PERSONAL", "SERVICE"]
+DebtType = Literal["credit_card", "personal_loan", "mortgage", "car_loan", "other"]
 
 
 class DebtCreate(BaseModel):
@@ -19,7 +19,7 @@ class DebtCreate(BaseModel):
 
     creditor: str = Field(..., min_length=1, max_length=100)
     description: Optional[str] = Field(None, max_length=500)
-    debt_type: DebtType = "PERSONAL"
+    debt_type: DebtType = "other"
     total_amount: Decimal = Field(..., gt=0)
     currency_code: str = Field(default="MXN", max_length=3)
     exchange_rate_fixed: Decimal = Field(default=Decimal("1.0"), gt=0)
