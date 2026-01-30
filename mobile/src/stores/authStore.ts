@@ -12,9 +12,10 @@ interface AuthState {
 
   // Actions
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, familyName?: string) => Promise<void>;
+  register: (email: string, password: string, name?: string, familyName?: string) => Promise<void>;
   logout: () => Promise<void>;
   restoreSession: () => Promise<void>;
+  updateProfile: (data: { name?: string; email?: string }) => Promise<void>;
   clearError: () => void;
 }
 
@@ -48,12 +49,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  register: async (email: string, password: string, familyName?: string) => {
+  register: async (email: string, password: string, name?: string, familyName?: string) => {
     set({ isLoading: true, error: null });
 
     try {
       // Register creates the user
-      await authService.register({ email, password, family_name: familyName });
+      await authService.register({ email, password, name, family_name: familyName });
 
       // Then login
       const { user, tokens } = await authService.login({ email, password });
@@ -117,6 +118,26 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isLoading: false,
         isInitialized: true,
       });
+    }
+  },
+
+  updateProfile: async (data: { name?: string; email?: string }) => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const user = await authService.updateProfile(data);
+      set({
+        user,
+        isLoading: false,
+        error: null,
+      });
+    } catch (error) {
+      const message = authService.getErrorMessage(error);
+      set({
+        isLoading: false,
+        error: message,
+      });
+      throw error;
     }
   },
 

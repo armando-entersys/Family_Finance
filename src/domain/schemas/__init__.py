@@ -8,6 +8,7 @@ from .auth import (
     TokenResponse,
     TokenRefresh,
     UserResponse,
+    UserUpdate,
     UserWithFamily,
 )
 from .transaction import (
@@ -51,6 +52,7 @@ __all__ = [
     "TokenResponse",
     "TokenRefresh",
     "UserResponse",
+    "UserUpdate",
     "UserWithFamily",
     # Transactions
     "TransactionCreate",

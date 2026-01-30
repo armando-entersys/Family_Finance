@@ -13,6 +13,7 @@ class UserRegister(BaseModel):
 
     email: EmailStr
     password: str = Field(..., min_length=8, max_length=128)
+    name: Optional[str] = Field(None, max_length=100)
     family_name: Optional[str] = Field(None, max_length=100)
 
 
@@ -43,11 +44,19 @@ class UserResponse(BaseModel):
 
     id: uuid.UUID
     email: str
+    name: Optional[str] = None
     role: str
     family_id: Optional[uuid.UUID] = None
     is_active: bool
 
     model_config = {"from_attributes": True}
+
+
+class UserUpdate(BaseModel):
+    """Schema for updating user profile."""
+
+    name: Optional[str] = Field(None, max_length=100)
+    email: Optional[EmailStr] = None
 
 
 class UserWithFamily(UserResponse):

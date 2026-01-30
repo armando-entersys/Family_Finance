@@ -23,6 +23,7 @@ from src.domain.schemas import (
     TokenResponse,
     UserRegister,
     UserResponse,
+    UserUpdate,
 )
 from src.api.v1.dependencies import CurrentUser, DbSession
 
@@ -60,6 +61,7 @@ async def register(
     # Create user
     user = User(
         email=data.email.lower(),
+        name=data.name,
         password_hash=hash_password(data.password),
         family_id=family_id,
         role="ADMIN" if family_id else "MEMBER",
@@ -156,4 +158,35 @@ async def get_current_user_info(
     """
     Get current user information.
     """
+    return current_user
+
+
+@router.patch("/me", response_model=UserResponse)
+async def update_current_user(
+    data: UserUpdate,
+    current_user: CurrentUser,
+    db: DbSession,
+) -> User:
+    """
+    Update current user profile.
+    """
+    # Check if email is being changed and is unique
+    if data.email and data.email.lower() != current_user.email:
+        result = await db.execute(
+            select(User).where(User.email == data.email.lower())
+        )
+        if result.scalar_one_or_none():
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Email already in use",
+            )
+        current_user.email = data.email.lower()
+
+    # Update name if provided
+    if data.name is not None:
+        current_user.name = data.name
+
+    await db.commit()
+    await db.refresh(current_user)
+
     return current_user

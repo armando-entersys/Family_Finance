@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 
 export default function RegisterScreen() {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -23,6 +24,11 @@ export default function RegisterScreen() {
   const { register, isLoading, error, clearError } = useAuthStore();
 
   const handleRegister = async () => {
+    if (!name.trim()) {
+      Alert.alert('Error', 'Por favor ingresa tu nombre');
+      return;
+    }
+
     if (!email.trim() || !password.trim()) {
       Alert.alert('Error', 'Por favor completa los campos requeridos');
       return;
@@ -40,7 +46,7 @@ export default function RegisterScreen() {
 
     try {
       clearError();
-      await register(email.trim(), password, familyName.trim() || undefined);
+      await register(email.trim(), password, name.trim(), familyName.trim() || undefined);
       router.replace('/(tabs)');
     } catch (err) {
       // Error is handled by the store
@@ -75,6 +81,15 @@ export default function RegisterScreen() {
 
           {/* Form */}
           <View className="space-y-4">
+            <Input
+              label="Nombre Completo"
+              value={name}
+              onChangeText={setName}
+              placeholder="Tu nombre"
+              autoCapitalize="words"
+              leftIcon={<Ionicons name="person-outline" size={20} color="#9CA3AF" />}
+            />
+
             <Input
               label="Correo Electronico"
               value={email}

@@ -45,7 +45,7 @@ export default function HomeScreen() {
           <View>
             <Text className="text-primary-200 text-sm">Bienvenido</Text>
             <Text className="text-white text-xl font-semibold">
-              {user?.email?.split('@')[0] || 'Usuario'}
+              {user?.name || user?.email?.split('@')[0] || 'Usuario'}
             </Text>
           </View>
           <TouchableOpacity

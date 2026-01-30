@@ -11,7 +11,13 @@ export interface LoginCredentials {
 export interface RegisterData {
   email: string;
   password: string;
+  name?: string;
   family_name?: string;
+}
+
+export interface UpdateProfileData {
+  name?: string;
+  email?: string;
 }
 
 // Login with email/password
@@ -48,8 +54,19 @@ export const register = async (data: RegisterData): Promise<User> => {
   const response = await api.post<User>(API_ENDPOINTS.REGISTER, {
     email: data.email,
     password: data.password,
+    name: data.name,
     family_name: data.family_name,
   });
+
+  return response.data;
+};
+
+// Update user profile
+export const updateProfile = async (data: UpdateProfileData): Promise<User> => {
+  const response = await api.patch<User>(API_ENDPOINTS.ME, data);
+
+  // Update stored user
+  await storage.setItem(STORAGE_KEYS.USER, JSON.stringify(response.data));
 
   return response.data;
 };

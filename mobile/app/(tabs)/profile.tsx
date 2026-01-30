@@ -46,7 +46,7 @@ const showConfirm = (title: string, message: string, onConfirm: () => void) => {
 };
 
 export default function ProfileScreen() {
-  const { user, logout } = useAuthStore();
+  const { user, logout, updateProfile } = useAuthStore();
   const isAdmin = user?.role === 'ADMIN';
 
   // Settings queries
@@ -65,10 +65,13 @@ export default function ProfileScreen() {
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [showFamilyModal, setShowFamilyModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showEditProfileModal, setShowEditProfileModal] = useState(false);
 
   // Form states
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<'MEMBER' | 'ADMIN'>('MEMBER');
+  const [editName, setEditName] = useState(user?.name || '');
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
 
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -149,6 +152,34 @@ export default function ProfileScreen() {
     });
   };
 
+  const handleUpdateProfile = async () => {
+    if (!editName.trim()) {
+      if (Platform.OS === 'web') {
+        window.alert('Error: El nombre no puede estar vacio');
+      }
+      return;
+    }
+    setIsUpdatingProfile(true);
+    try {
+      await updateProfile({ name: editName.trim() });
+      setShowEditProfileModal(false);
+      if (Platform.OS === 'web') {
+        window.alert('Perfil actualizado correctamente');
+      }
+    } catch (error) {
+      if (Platform.OS === 'web') {
+        window.alert('Error: No se pudo actualizar el perfil');
+      }
+    } finally {
+      setIsUpdatingProfile(false);
+    }
+  };
+
+  const openEditProfileModal = () => {
+    setEditName(user?.name || '');
+    setShowEditProfileModal(true);
+  };
+
   const currentCurrency = CURRENCIES.find((c) => c.code === userSettings?.preferred_currency) || CURRENCIES[0];
   const currentLanguage = LANGUAGES.find((l) => l.code === userSettings?.language) || LANGUAGES[0];
 
@@ -170,19 +201,26 @@ export default function ProfileScreen() {
         <View className="items-center">
           <View className="w-24 h-24 bg-white/20 rounded-full items-center justify-center mb-4">
             <Text className="text-white text-4xl font-bold">
-              {user?.email?.charAt(0).toUpperCase() || 'U'}
+              {user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
             </Text>
           </View>
           <Text className="text-white text-xl font-semibold">
-            {user?.email?.split('@')[0] || 'Usuario'}
+            {user?.name || user?.email?.split('@')[0] || 'Usuario'}
           </Text>
           <Text className="text-primary-200 mt-1">{user?.email}</Text>
-          <View className="flex-row items-center mt-2">
+          <View className="flex-row items-center mt-2 gap-2">
             <View className="bg-white/20 px-3 py-1 rounded-full">
               <Text className="text-white text-sm">
                 {isAdmin ? 'Administrador' : 'Miembro'}
               </Text>
             </View>
+            <TouchableOpacity
+              onPress={openEditProfileModal}
+              className="bg-white/20 px-3 py-1 rounded-full flex-row items-center"
+            >
+              <Ionicons name="pencil" size={14} color="white" />
+              <Text className="text-white text-sm ml-1">Editar</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </View>
@@ -478,6 +516,46 @@ export default function ProfileScreen() {
                 <ActivityIndicator color="white" />
               ) : (
                 <Text className="text-white font-semibold text-lg">Enviar Invitacion</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Edit Profile Modal */}
+      <Modal visible={showEditProfileModal} animationType="slide" transparent>
+        <View className="flex-1 bg-black/50 justify-end">
+          <View className="bg-white rounded-t-3xl p-6 pb-10">
+            <View className="flex-row items-center justify-between mb-6">
+              <Text className="text-xl font-bold text-gray-900">Editar Perfil</Text>
+              <TouchableOpacity onPress={() => setShowEditProfileModal(false)}>
+                <Ionicons name="close" size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+
+            <Text className="text-gray-600 mb-2">Nombre</Text>
+            <TextInput
+              className="bg-gray-100 rounded-xl px-4 py-3 text-gray-900 mb-4"
+              placeholder="Tu nombre completo"
+              value={editName}
+              onChangeText={setEditName}
+              autoCapitalize="words"
+            />
+
+            <Text className="text-gray-600 mb-2">Correo electronico</Text>
+            <View className="bg-gray-100 rounded-xl px-4 py-3 mb-6">
+              <Text className="text-gray-500">{user?.email}</Text>
+            </View>
+
+            <TouchableOpacity
+              className="bg-primary-600 py-4 rounded-xl items-center"
+              onPress={handleUpdateProfile}
+              disabled={isUpdatingProfile}
+            >
+              {isUpdatingProfile ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <Text className="text-white font-semibold text-lg">Guardar Cambios</Text>
               )}
             </TouchableOpacity>
           </View>
