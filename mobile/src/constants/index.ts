@@ -85,7 +85,7 @@ export const IMAGE_CONFIG = {
 
 // Gemini AI Configuration
 export const GEMINI_CONFIG = {
-  MODEL: 'gemini-1.5-pro',
+  MODEL: 'gemini-2.0-flash',
   SYSTEM_PROMPT: `Analyze this receipt image. Extract the following information and return ONLY raw JSON (no markdown, no code blocks):
 {
   "merchant_name": "string - name of the store/merchant",
