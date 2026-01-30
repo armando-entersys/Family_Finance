@@ -8,11 +8,11 @@ import {
   Modal,
   TextInput,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { formatCurrency, formatPercentage } from '@/utils/format';
 import { useDebts, useDebtSummary, useCreateDebt, useAddPayment } from '@/hooks/useDebts';
+import { showSuccess, showError, showFeedback } from '@/utils/feedback';
 import type { Debt, CreateDebtData } from '@/services/debts';
 
 const DEBT_TYPES = [
@@ -47,7 +47,7 @@ export default function DebtsScreen() {
 
   const handleCreateDebt = async () => {
     if (!newCreditor.trim() || !newAmount) {
-      Alert.alert('Error', 'Ingresa acreedor y monto');
+      showError('Ingresa acreedor y monto');
       return;
     }
 
@@ -63,20 +63,25 @@ export default function DebtsScreen() {
       setNewCreditor('');
       setNewAmount('');
       setNewDebtType('credit_card');
+      showSuccess('Deuda registrada correctamente');
     } catch (error) {
-      Alert.alert('Error', 'No se pudo crear la deuda');
+      showError('No se pudo crear la deuda. Intenta de nuevo.');
     }
   };
 
   const handleAddPayment = async () => {
     if (!paymentAmount || !selectedDebt) {
-      Alert.alert('Error', 'Ingresa el monto del pago');
+      showError('Ingresa el monto del pago');
       return;
     }
 
     const amount = parseFloat(paymentAmount);
     if (amount > selectedDebt.current_balance) {
-      Alert.alert('Aviso', 'El pago excede el saldo pendiente. Se registrara como pago total.');
+      showFeedback({
+        title: 'Aviso',
+        message: 'El pago excede el saldo pendiente. Se registrara como pago total.',
+        type: 'warning',
+      });
     }
 
     try {
@@ -87,8 +92,9 @@ export default function DebtsScreen() {
       setShowPaymentModal(false);
       setPaymentAmount('');
       setSelectedDebt(null);
+      showSuccess('Pago registrado correctamente');
     } catch (error) {
-      Alert.alert('Error', 'No se pudo registrar el pago');
+      showError('No se pudo registrar el pago');
     }
   };
 

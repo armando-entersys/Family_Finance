@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, ActivityIndicator } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { ReceiptScanner } from '@/components/scanner/ReceiptScanner';
 import { ReceiptReview } from '@/components/scanner/ReceiptReview';
 import { scanReceipt } from '@/services/receiptScanner';
 import { useCreateTransaction, useUploadAttachment } from '@/hooks/useTransactions';
+import { showSuccess, showError, showFeedback } from '@/utils/feedback';
 import type { ParsedReceipt, TransactionCreate } from '@/types';
 
 type ScanState = 'camera' | 'processing' | 'review';
@@ -28,14 +30,15 @@ export default function ScanScreen() {
       setState('review');
     } catch (error) {
       console.error('Receipt scan error:', error);
-      Alert.alert(
-        'Error al Procesar',
-        'No se pudo analizar el recibo. Por favor intenta de nuevo o ingresa los datos manualmente.',
-        [
+      showFeedback({
+        title: 'Error al Procesar',
+        message: 'No se pudo analizar el recibo. Por favor intenta de nuevo o ingresa los datos manualmente.',
+        type: 'error',
+        buttons: [
           { text: 'Reintentar', onPress: () => setState('camera') },
-          { text: 'Cancelar', onPress: () => router.back() },
-        ]
-      );
+          { text: 'Cancelar', style: 'cancel', onPress: () => router.back() },
+        ],
+      });
     }
   };
 
@@ -58,23 +61,18 @@ export default function ScanScreen() {
       }
 
       // Show success and navigate back
-      Alert.alert(
-        'Exito!',
-        'El gasto se ha guardado correctamente.',
-        [
-          {
-            text: 'Ver Transaccion',
-            onPress: () => router.replace(`/transaction/${created.id}`),
-          },
-          { text: 'OK', onPress: () => router.back() },
-        ]
-      );
+      showFeedback({
+        title: 'Exito!',
+        message: 'El gasto se ha guardado correctamente.',
+        type: 'success',
+        buttons: [
+          { text: 'Ver Transaccion', onPress: () => router.replace(`/transaction/${created.id}`) },
+          { text: 'OK', style: 'cancel', onPress: () => router.back() },
+        ],
+      });
     } catch (error) {
       console.error('Transaction creation error:', error);
-      Alert.alert(
-        'Error',
-        'No se pudo guardar el gasto. Por favor intenta de nuevo.'
-      );
+      showError('No se pudo guardar el gasto. Por favor intenta de nuevo.');
     }
   };
 
@@ -102,13 +100,19 @@ export default function ScanScreen() {
   if (state === 'processing') {
     return (
       <View className="flex-1 bg-gray-900 items-center justify-center">
-        <View className="bg-white/10 rounded-2xl p-8 items-center mx-6">
-          <ActivityIndicator size="large" color="#ffffff" />
-          <Text className="text-white text-xl font-semibold mt-4">
+        <View className="bg-white/10 rounded-3xl p-10 items-center mx-6">
+          <View className="w-20 h-20 bg-primary-500/20 rounded-full items-center justify-center mb-4">
+            <Ionicons name="sparkles" size={40} color="#818CF8" />
+          </View>
+          <ActivityIndicator size="large" color="#818CF8" />
+          <Text className="text-white text-2xl font-bold mt-6">
             Analizando recibo...
           </Text>
-          <Text className="text-white/60 text-center mt-2">
-            Usando inteligencia artificial para{'\n'}extraer los datos del recibo
+          <Text className="text-white/60 text-center mt-3 text-base">
+            La inteligencia artificial esta{'\n'}extrayendo los datos del recibo
+          </Text>
+          <Text className="text-white/40 text-center mt-4 text-sm">
+            Esto puede tardar unos segundos
           </Text>
         </View>
       </View>

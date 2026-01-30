@@ -8,11 +8,11 @@ import {
   Modal,
   TextInput,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { formatCurrency, formatPercentage } from '@/utils/format';
 import { useGoals, useCreateGoal, useAddContribution } from '@/hooks/useGoals';
+import { showSuccess, showError } from '@/utils/feedback';
 import type { Goal } from '@/services/goals';
 
 const GOAL_ICONS = [
@@ -46,7 +46,7 @@ export default function GoalsScreen() {
 
   const handleCreateGoal = async () => {
     if (!newGoalName.trim() || !newGoalAmount) {
-      Alert.alert('Error', 'Ingresa nombre y monto de la meta');
+      showError('Ingresa nombre y monto de la meta');
       return;
     }
 
@@ -61,20 +61,21 @@ export default function GoalsScreen() {
       setNewGoalName('');
       setNewGoalAmount('');
       setNewGoalIcon('sparkles');
+      showSuccess('Meta creada correctamente');
     } catch (error) {
-      Alert.alert('Error', 'No se pudo crear la meta');
+      showError('No se pudo crear la meta. Intenta de nuevo.');
     }
   };
 
   const handleAddContribution = async () => {
     if (!contributionAmount || !selectedGoal) {
-      Alert.alert('Error', 'Ingresa el monto');
+      showError('Ingresa el monto');
       return;
     }
 
     const amount = parseFloat(contributionAmount);
     if (isWithdrawal && amount > selectedGoal.current_saved) {
-      Alert.alert('Error', 'El monto a retirar excede el ahorro actual');
+      showError('El monto a retirar excede el ahorro actual');
       return;
     }
 
@@ -90,8 +91,9 @@ export default function GoalsScreen() {
       setContributionAmount('');
       setIsWithdrawal(false);
       setSelectedGoal(null);
+      showSuccess(isWithdrawal ? 'Retiro registrado' : 'Ahorro agregado correctamente');
     } catch (error) {
-      Alert.alert('Error', 'No se pudo registrar el movimiento');
+      showError('No se pudo registrar el movimiento');
     }
   };
 

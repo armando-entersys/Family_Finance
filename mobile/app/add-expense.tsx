@@ -6,8 +6,8 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/Input';
 import { CATEGORIES } from '@/constants';
 import { useCreateTransaction } from '@/hooks/useTransactions';
 import { scanReceipt } from '@/services/receiptScanner';
-import { formatCurrency } from '@/utils/format';
+import { showSuccess, showError, showFeedback } from '@/utils/feedback';
 import type { TransactionType, ParsedReceipt } from '@/types';
 
 const TRANSACTION_TYPES: { label: string; value: TransactionType; color: string }[] = [
@@ -59,7 +59,7 @@ export default function AddExpenseScreen() {
     try {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permiso denegado', 'Necesitamos acceso a la camara');
+        showError('Necesitamos acceso a la camara para tomar fotos');
         return;
       }
 
@@ -101,10 +101,10 @@ export default function AddExpenseScreen() {
         setDate(receipt.date);
       }
 
-      Alert.alert('Exito', 'Datos extraidos del recibo. Puedes modificarlos si es necesario.');
+      showSuccess('Datos extraidos del recibo. Puedes modificarlos si es necesario.');
     } catch (error) {
       console.error('AI scan error:', error);
-      Alert.alert('Error', 'No se pudo procesar el recibo. Ingresa los datos manualmente.');
+      showError('No se pudo procesar el recibo. Ingresa los datos manualmente.');
     } finally {
       setIsScanning(false);
     }
@@ -118,7 +118,7 @@ export default function AddExpenseScreen() {
   // Save transaction
   const handleSave = async () => {
     if (!amount || parseFloat(amount) <= 0) {
-      Alert.alert('Error', 'Ingresa un monto valido');
+      showError('Ingresa un monto valido');
       return;
     }
 
@@ -131,12 +131,12 @@ export default function AddExpenseScreen() {
         trx_date: new Date(date).toISOString(),
       });
 
-      Alert.alert('Exito', 'Transaccion guardada', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+      showSuccess('Transaccion guardada correctamente', () => {
+        router.back();
+      });
     } catch (error) {
       console.error('Save error:', error);
-      Alert.alert('Error', 'No se pudo guardar la transaccion');
+      showError('No se pudo guardar la transaccion. Intenta de nuevo.');
     }
   };
 
