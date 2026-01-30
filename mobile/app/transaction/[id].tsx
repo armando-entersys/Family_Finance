@@ -1,51 +1,103 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
   Image,
-  Alert,
   ActivityIndicator,
+  Modal,
+  TextInput,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useTransaction, useDeleteTransaction } from '@/hooks/useTransactions';
+import { useTransaction, useUpdateTransaction, useDeleteTransaction } from '@/hooks/useTransactions';
 import { CATEGORIES } from '@/constants';
+import { showSuccess, showError, showConfirm } from '@/utils/feedback';
 import {
   formatCurrency,
   formatDate,
   formatTransactionType,
   getTransactionTypeColor,
 } from '@/utils/format';
+import type { TransactionType } from '@/types';
+
+const TRANSACTION_TYPES: { label: string; value: TransactionType; color: string }[] = [
+  { label: 'Gasto', value: 'EXPENSE', color: '#EF4444' },
+  { label: 'Ingreso', value: 'INCOME', color: '#10B981' },
+];
 
 export default function TransactionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: transaction, isLoading, error } = useTransaction(id);
+  const updateTransaction = useUpdateTransaction();
   const deleteTransaction = useDeleteTransaction();
+
+  // Edit modal state
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editType, setEditType] = useState<TransactionType>('EXPENSE');
+  const [editAmount, setEditAmount] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editCategoryId, setEditCategoryId] = useState<number>(1);
+  const [editDate, setEditDate] = useState('');
+
+  // Initialize edit form when transaction loads
+  useEffect(() => {
+    if (transaction) {
+      setEditType(transaction.type);
+      setEditAmount(transaction.amount_original.toString());
+      setEditDescription(transaction.description || '');
+      setEditCategoryId(transaction.category_id || 1);
+      setEditDate(transaction.trx_date.split('T')[0]);
+    }
+  }, [transaction]);
 
   const category = CATEGORIES.find((c) => c.id === transaction?.category_id);
 
   const handleDelete = () => {
-    Alert.alert(
+    showConfirm(
       'Eliminar Transaccion',
       'Esta seguro que desea eliminar esta transaccion? Esta accion no se puede deshacer.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Eliminar',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteTransaction.mutateAsync(id);
-              router.back();
-            } catch (error) {
-              Alert.alert('Error', 'No se pudo eliminar la transaccion');
-            }
-          },
-        },
-      ]
+      async () => {
+        try {
+          await deleteTransaction.mutateAsync(id);
+          showSuccess('Transaccion eliminada', () => {
+            router.back();
+          });
+        } catch (error) {
+          showError('No se pudo eliminar la transaccion');
+        }
+      }
     );
+  };
+
+  const handleEdit = () => {
+    setShowEditModal(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editAmount || parseFloat(editAmount) <= 0) {
+      showError('Ingresa un monto valido');
+      return;
+    }
+
+    try {
+      await updateTransaction.mutateAsync({
+        id,
+        data: {
+          amount_original: parseFloat(editAmount),
+          type: editType,
+          category_id: editCategoryId,
+          description: editDescription || undefined,
+          trx_date: new Date(editDate).toISOString(),
+        },
+      });
+      setShowEditModal(false);
+      showSuccess('Transaccion actualizada correctamente');
+    } catch (error) {
+      console.error('Update error:', error);
+      showError('No se pudo actualizar la transaccion');
+    }
   };
 
   if (isLoading) {
@@ -77,123 +129,259 @@ export default function TransactionDetailScreen() {
   const amountColor = getTransactionTypeColor(transaction.type);
 
   return (
-    <ScrollView className="flex-1 bg-gray-50">
-      {/* Header */}
-      <View className="bg-white pt-14 pb-6 px-6 border-b border-gray-100">
-        <View className="flex-row items-center justify-between mb-4">
-          <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color="#374151" />
-          </TouchableOpacity>
-          <Text className="text-lg font-semibold text-gray-900">Detalle</Text>
-          <TouchableOpacity onPress={handleDelete}>
-            <Ionicons name="trash-outline" size={24} color="#EF4444" />
-          </TouchableOpacity>
+    <View className="flex-1 bg-gray-50">
+      <ScrollView className="flex-1">
+        {/* Header */}
+        <View className="bg-white pt-14 pb-6 px-6 border-b border-gray-100">
+          <View className="flex-row items-center justify-between mb-4">
+            <TouchableOpacity onPress={() => router.back()}>
+              <Ionicons name="arrow-back" size={24} color="#374151" />
+            </TouchableOpacity>
+            <Text className="text-lg font-semibold text-gray-900">Detalle</Text>
+            <TouchableOpacity onPress={handleDelete}>
+              <Ionicons name="trash-outline" size={24} color="#EF4444" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Amount Card */}
+          <View className="items-center py-6">
+            <View
+              className="w-16 h-16 rounded-2xl items-center justify-center mb-4"
+              style={{ backgroundColor: `${category?.color || '#6B7280'}20` }}
+            >
+              <Ionicons
+                name={(category?.icon || 'ellipsis-horizontal') as keyof typeof Ionicons.glyphMap}
+                size={32}
+                color={category?.color || '#6B7280'}
+              />
+            </View>
+            <Text className="text-4xl font-bold" style={{ color: amountColor }}>
+              {isIncome ? '+' : '-'}{formatCurrency(transaction.amount_original, transaction.currency_code)}
+            </Text>
+            {transaction.currency_code !== 'MXN' && (
+              <Text className="text-gray-400 mt-1">
+                ~{formatCurrency(transaction.amount_base, 'MXN')} MXN
+              </Text>
+            )}
+            <View
+              className="mt-3 px-3 py-1 rounded-full"
+              style={{ backgroundColor: `${amountColor}20` }}
+            >
+              <Text style={{ color: amountColor }} className="font-medium">
+                {formatTransactionType(transaction.type)}
+              </Text>
+            </View>
+          </View>
         </View>
 
-        {/* Amount Card */}
-        <View className="items-center py-6">
-          <View
-            className="w-16 h-16 rounded-2xl items-center justify-center mb-4"
-            style={{ backgroundColor: `${category?.color || '#6B7280'}20` }}
-          >
-            <Ionicons
-              name={(category?.icon || 'ellipsis-horizontal') as keyof typeof Ionicons.glyphMap}
-              size={32}
-              color={category?.color || '#6B7280'}
-            />
-          </View>
-          <Text className="text-4xl font-bold" style={{ color: amountColor }}>
-            {isIncome ? '+' : '-'}{formatCurrency(transaction.amount_original, transaction.currency_code)}
-          </Text>
-          {transaction.currency_code !== 'MXN' && (
-            <Text className="text-gray-400 mt-1">
-              ~{formatCurrency(transaction.amount_base, 'MXN')} MXN
-            </Text>
+        {/* Details */}
+        <View className="p-6">
+          {/* Receipt Image */}
+          {transaction.attachment_url && (
+            <View className="mb-6">
+              <Text className="text-sm font-medium text-gray-500 mb-2">
+                Recibo
+              </Text>
+              <Image
+                source={{ uri: transaction.attachment_url }}
+                className="w-full h-48 rounded-2xl bg-gray-100"
+                resizeMode="cover"
+              />
+            </View>
           )}
-          <View
-            className="mt-3 px-3 py-1 rounded-full"
-            style={{ backgroundColor: `${amountColor}20` }}
+
+          {/* Info Cards */}
+          <View className="bg-white rounded-2xl overflow-hidden shadow-sm">
+            <View className="flex-row items-center px-4 py-3.5 border-b border-gray-100">
+              <View className="w-9 h-9 bg-gray-100 rounded-full items-center justify-center mr-3">
+                <Ionicons name="document-text-outline" size={20} color="#6B7280" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-sm text-gray-500">Descripcion</Text>
+                <Text className="text-gray-900 font-medium">
+                  {transaction.description || 'Sin descripcion'}
+                </Text>
+              </View>
+            </View>
+
+            <View className="flex-row items-center px-4 py-3.5 border-b border-gray-100">
+              <View className="w-9 h-9 bg-gray-100 rounded-full items-center justify-center mr-3">
+                <Ionicons name="pricetag-outline" size={20} color="#6B7280" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-sm text-gray-500">Categoria</Text>
+                <Text className="text-gray-900 font-medium">
+                  {category?.name || 'Sin categoria'}
+                </Text>
+              </View>
+            </View>
+
+            <View className="flex-row items-center px-4 py-3.5 border-b border-gray-100">
+              <View className="w-9 h-9 bg-gray-100 rounded-full items-center justify-center mr-3">
+                <Ionicons name="calendar-outline" size={20} color="#6B7280" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-sm text-gray-500">Fecha</Text>
+                <Text className="text-gray-900 font-medium">
+                  {formatDate(transaction.trx_date, 'EEEE, d MMMM yyyy')}
+                </Text>
+              </View>
+            </View>
+
+            <View className="flex-row items-center px-4 py-3.5">
+              <View className="w-9 h-9 bg-gray-100 rounded-full items-center justify-center mr-3">
+                <Ionicons name="time-outline" size={20} color="#6B7280" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-sm text-gray-500">Registrado</Text>
+                <Text className="text-gray-900 font-medium">
+                  {formatDate(transaction.created_at, 'd MMM yyyy, HH:mm')}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Edit Button */}
+          <TouchableOpacity
+            onPress={handleEdit}
+            className="mt-6 bg-primary-600 py-4 rounded-xl flex-row items-center justify-center"
           >
-            <Text style={{ color: amountColor }} className="font-medium">
-              {formatTransactionType(transaction.type)}
-            </Text>
+            <Ionicons name="pencil-outline" size={20} color="white" />
+            <Text className="text-white font-semibold ml-2">Editar Transaccion</Text>
+          </TouchableOpacity>
+
+          {/* Delete Button */}
+          <TouchableOpacity
+            onPress={handleDelete}
+            className="mt-3 bg-red-50 py-4 rounded-xl flex-row items-center justify-center"
+          >
+            <Ionicons name="trash-outline" size={20} color="#EF4444" />
+            <Text className="text-red-500 font-semibold ml-2">Eliminar Transaccion</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+
+      {/* Edit Modal */}
+      <Modal visible={showEditModal} animationType="slide" transparent>
+        <View className="flex-1 bg-black/50 justify-end">
+          <View className="bg-white rounded-t-3xl p-6 pb-10 max-h-[90%]">
+            <View className="flex-row items-center justify-between mb-6">
+              <Text className="text-xl font-bold text-gray-900">Editar Transaccion</Text>
+              <TouchableOpacity onPress={() => setShowEditModal(false)}>
+                <Ionicons name="close" size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {/* Transaction Type Toggle */}
+              <View className="flex-row bg-gray-100 rounded-xl p-1 mb-4">
+                {TRANSACTION_TYPES.map((t) => (
+                  <TouchableOpacity
+                    key={t.value}
+                    onPress={() => setEditType(t.value)}
+                    className={`flex-1 py-3 rounded-lg ${
+                      editType === t.value ? 'bg-white shadow-sm' : ''
+                    }`}
+                  >
+                    <Text
+                      className={`text-center font-semibold ${
+                        editType === t.value ? 'text-gray-900' : 'text-gray-500'
+                      }`}
+                      style={editType === t.value ? { color: t.color } : {}}
+                    >
+                      {t.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Amount */}
+              <Text className="text-gray-600 mb-2">Monto</Text>
+              <View className="flex-row items-center bg-gray-100 rounded-xl px-4 mb-4">
+                <Text className="text-2xl font-bold text-gray-400 mr-2">$</Text>
+                <TextInput
+                  value={editAmount}
+                  onChangeText={setEditAmount}
+                  keyboardType="decimal-pad"
+                  placeholder="0.00"
+                  className="flex-1 text-2xl font-bold py-3"
+                />
+              </View>
+
+              {/* Description */}
+              <Text className="text-gray-600 mb-2">Descripcion</Text>
+              <TextInput
+                value={editDescription}
+                onChangeText={setEditDescription}
+                placeholder="Ej: Supermercado, Gasolina..."
+                className="bg-gray-100 rounded-xl px-4 py-3 text-gray-900 mb-4"
+              />
+
+              {/* Date */}
+              <Text className="text-gray-600 mb-2">Fecha</Text>
+              <TextInput
+                value={editDate}
+                onChangeText={setEditDate}
+                placeholder="YYYY-MM-DD"
+                className="bg-gray-100 rounded-xl px-4 py-3 text-gray-900 mb-4"
+              />
+
+              {/* Category Selection */}
+              <Text className="text-gray-600 mb-2">Categoria</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-6">
+                <View className="flex-row gap-2">
+                  {CATEGORIES.map((cat) => (
+                    <TouchableOpacity
+                      key={cat.id}
+                      onPress={() => setEditCategoryId(cat.id)}
+                      className={`px-4 py-2 rounded-full flex-row items-center ${
+                        editCategoryId === cat.id ? 'bg-primary-600' : 'bg-gray-100'
+                      }`}
+                    >
+                      <Ionicons
+                        name={cat.icon as keyof typeof Ionicons.glyphMap}
+                        size={18}
+                        color={editCategoryId === cat.id ? 'white' : cat.color}
+                      />
+                      <Text
+                        className={`ml-2 font-medium ${
+                          editCategoryId === cat.id ? 'text-white' : 'text-gray-700'
+                        }`}
+                      >
+                        {cat.name}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </ScrollView>
+
+              {/* Save Button */}
+              <TouchableOpacity
+                onPress={handleSaveEdit}
+                disabled={updateTransaction.isPending}
+                className="bg-primary-600 py-4 rounded-xl items-center"
+              >
+                {updateTransaction.isPending ? (
+                  <ActivityIndicator color="white" />
+                ) : (
+                  <Text className="text-white font-semibold text-lg">Guardar Cambios</Text>
+                )}
+              </TouchableOpacity>
+
+              {/* Delete from Edit Modal */}
+              <TouchableOpacity
+                onPress={() => {
+                  setShowEditModal(false);
+                  setTimeout(handleDelete, 300);
+                }}
+                className="mt-3 py-4 rounded-xl items-center"
+              >
+                <Text className="text-red-500 font-semibold">Eliminar Transaccion</Text>
+              </TouchableOpacity>
+            </ScrollView>
           </View>
         </View>
-      </View>
-
-      {/* Details */}
-      <View className="p-6">
-        {/* Receipt Image */}
-        {transaction.attachment_url && (
-          <View className="mb-6">
-            <Text className="text-sm font-medium text-gray-500 mb-2">
-              Recibo
-            </Text>
-            <Image
-              source={{ uri: transaction.attachment_url }}
-              className="w-full h-48 rounded-2xl bg-gray-100"
-              resizeMode="cover"
-            />
-          </View>
-        )}
-
-        {/* Info Cards */}
-        <View className="bg-white rounded-2xl overflow-hidden shadow-sm">
-          <View className="flex-row items-center px-4 py-3.5 border-b border-gray-100">
-            <View className="w-9 h-9 bg-gray-100 rounded-full items-center justify-center mr-3">
-              <Ionicons name="document-text-outline" size={20} color="#6B7280" />
-            </View>
-            <View className="flex-1">
-              <Text className="text-sm text-gray-500">Descripcion</Text>
-              <Text className="text-gray-900 font-medium">
-                {transaction.description || 'Sin descripcion'}
-              </Text>
-            </View>
-          </View>
-
-          <View className="flex-row items-center px-4 py-3.5 border-b border-gray-100">
-            <View className="w-9 h-9 bg-gray-100 rounded-full items-center justify-center mr-3">
-              <Ionicons name="pricetag-outline" size={20} color="#6B7280" />
-            </View>
-            <View className="flex-1">
-              <Text className="text-sm text-gray-500">Categoria</Text>
-              <Text className="text-gray-900 font-medium">
-                {category?.name || 'Sin categoria'}
-              </Text>
-            </View>
-          </View>
-
-          <View className="flex-row items-center px-4 py-3.5 border-b border-gray-100">
-            <View className="w-9 h-9 bg-gray-100 rounded-full items-center justify-center mr-3">
-              <Ionicons name="calendar-outline" size={20} color="#6B7280" />
-            </View>
-            <View className="flex-1">
-              <Text className="text-sm text-gray-500">Fecha</Text>
-              <Text className="text-gray-900 font-medium">
-                {formatDate(transaction.trx_date, 'EEEE, d MMMM yyyy')}
-              </Text>
-            </View>
-          </View>
-
-          <View className="flex-row items-center px-4 py-3.5">
-            <View className="w-9 h-9 bg-gray-100 rounded-full items-center justify-center mr-3">
-              <Ionicons name="time-outline" size={20} color="#6B7280" />
-            </View>
-            <View className="flex-1">
-              <Text className="text-sm text-gray-500">Registrado</Text>
-              <Text className="text-gray-900 font-medium">
-                {formatDate(transaction.created_at, 'd MMM yyyy, HH:mm')}
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Edit Button */}
-        <TouchableOpacity className="mt-6 bg-primary-600 py-4 rounded-xl flex-row items-center justify-center">
-          <Ionicons name="pencil-outline" size={20} color="white" />
-          <Text className="text-white font-semibold ml-2">Editar Transaccion</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+      </Modal>
+    </View>
   );
 }

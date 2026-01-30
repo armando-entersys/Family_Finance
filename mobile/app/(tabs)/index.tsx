@@ -9,17 +9,28 @@ import {
 import { Link, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useDashboard } from '@/hooks/useDashboard';
-import { useTransactionsInfinite } from '@/hooks/useTransactions';
+import { useTransactionsInfinite, useDeleteTransaction } from '@/hooks/useTransactions';
 import { useAuthStore } from '@/stores/authStore';
 import { TransactionItem } from '@/components/transactions/TransactionItem';
 import { formatCurrency } from '@/utils/format';
+import { showSuccess, showError } from '@/utils/feedback';
 
 export default function HomeScreen() {
   const { user } = useAuthStore();
   const { data: dashboard, isLoading, refetch, isRefetching } = useDashboard();
   const { data: transactionsData } = useTransactionsInfinite({ type: undefined });
+  const deleteTransaction = useDeleteTransaction();
 
   const recentTransactions = transactionsData?.pages[0]?.items.slice(0, 5) || [];
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteTransaction.mutateAsync(id);
+      showSuccess('Transaccion eliminada');
+    } catch (error) {
+      showError('No se pudo eliminar la transaccion');
+    }
+  };
 
   return (
     <ScrollView
@@ -143,6 +154,7 @@ export default function HomeScreen() {
                 key={transaction.id}
                 transaction={transaction}
                 onPress={() => router.push(`/transaction/${transaction.id}`)}
+                onDelete={handleDelete}
               />
             ))
           )}

@@ -8,8 +8,9 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useTransactionsInfinite } from '@/hooks/useTransactions';
+import { useTransactionsInfinite, useDeleteTransaction } from '@/hooks/useTransactions';
 import { TransactionItem } from '@/components/transactions/TransactionItem';
+import { showSuccess, showError } from '@/utils/feedback';
 import type { TransactionType } from '@/types';
 
 const FILTERS: { label: string; value: TransactionType | undefined }[] = [
@@ -35,11 +36,22 @@ export default function TransactionsScreen() {
     isRefetching,
   } = useTransactionsInfinite({ type: selectedFilter });
 
+  const deleteTransaction = useDeleteTransaction();
+
   const transactions = data?.pages.flatMap((page) => page.items) || [];
 
   const handleLoadMore = () => {
     if (hasNextPage && !isFetchingNextPage) {
       fetchNextPage();
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteTransaction.mutateAsync(id);
+      showSuccess('Transaccion eliminada');
+    } catch (error) {
+      showError('No se pudo eliminar la transaccion');
     }
   };
 
@@ -127,6 +139,7 @@ export default function TransactionsScreen() {
             <TransactionItem
               transaction={item}
               onPress={() => router.push(`/transaction/${item.id}`)}
+              onDelete={handleDelete}
             />
           )}
           onEndReached={handleLoadMore}

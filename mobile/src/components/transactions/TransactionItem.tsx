@@ -3,24 +3,39 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CATEGORIES } from '@/constants';
 import { formatCurrency, formatRelativeTime, getTransactionTypeColor } from '@/utils/format';
+import { showConfirm } from '@/utils/feedback';
 import type { Transaction } from '@/types';
 
 interface TransactionItemProps {
   transaction: Transaction;
   onPress?: () => void;
+  onDelete?: (id: string) => void;
 }
 
 export const TransactionItem: React.FC<TransactionItemProps> = ({
   transaction,
   onPress,
+  onDelete,
 }) => {
   const category = CATEGORIES.find((c) => c.id === transaction.category_id);
   const isIncome = transaction.type === 'INCOME';
   const amountColor = getTransactionTypeColor(transaction.type);
 
+  const handleLongPress = () => {
+    if (onDelete) {
+      showConfirm(
+        'Eliminar Transaccion',
+        `Eliminar "${transaction.description || category?.name || 'esta transaccion'}"?`,
+        () => onDelete(transaction.id)
+      );
+    }
+  };
+
   return (
     <TouchableOpacity
       onPress={onPress}
+      onLongPress={handleLongPress}
+      delayLongPress={500}
       className="flex-row items-center py-3 px-4 bg-white border-b border-gray-100"
       activeOpacity={0.7}
     >
