@@ -43,28 +43,40 @@ export const API_ENDPOINTS = {
   HEALTH_READY: '/health/ready',
 } as const;
 
-// Transaction Categories with icons
-export const CATEGORIES = [
-  { id: 1, name: 'Comida', icon: 'restaurant', color: '#F59E0B' },
-  { id: 2, name: 'Transporte', icon: 'car', color: '#3B82F6' },
-  { id: 3, name: 'Servicios', icon: 'flash', color: '#8B5CF6' },
-  { id: 4, name: 'Compras', icon: 'cart', color: '#EC4899' },
-  { id: 5, name: 'Salud', icon: 'medical', color: '#EF4444' },
-  { id: 6, name: 'Entretenimiento', icon: 'game-controller', color: '#10B981' },
-  { id: 7, name: 'Hogar', icon: 'home', color: '#6366F1' },
-  { id: 8, name: 'Educacion', icon: 'school', color: '#14B8A6' },
-  { id: 9, name: 'Otros', icon: 'ellipsis-horizontal', color: '#6B7280' },
+// Expense Categories with icons
+export const EXPENSE_CATEGORIES = [
+  { id: 5, name: 'Supermercado', icon: 'cart', color: '#F59E0B', type: 'EXPENSE' },
+  { id: 6, name: 'Restaurantes', icon: 'restaurant', color: '#EC4899', type: 'EXPENSE' },
+  { id: 7, name: 'Transporte', icon: 'car', color: '#3B82F6', type: 'EXPENSE' },
+  { id: 8, name: 'Servicios', icon: 'flash', color: '#8B5CF6', type: 'EXPENSE' },
+  { id: 9, name: 'Entretenimiento', icon: 'game-controller', color: '#10B981', type: 'EXPENSE' },
+  { id: 10, name: 'Salud', icon: 'medical', color: '#EF4444', type: 'EXPENSE' },
+  { id: 11, name: 'Educacion', icon: 'school', color: '#14B8A6', type: 'EXPENSE' },
+  { id: 12, name: 'Ropa', icon: 'shirt', color: '#A855F7', type: 'EXPENSE' },
+  { id: 13, name: 'Hogar', icon: 'home', color: '#6366F1', type: 'EXPENSE' },
+  { id: 14, name: 'Otros gastos', icon: 'ellipsis-horizontal', color: '#6B7280', type: 'EXPENSE' },
 ] as const;
 
-// Receipt category mapping to internal categories
+// Income Categories with icons
+export const INCOME_CATEGORIES = [
+  { id: 1, name: 'Salario', icon: 'briefcase', color: '#10B981', type: 'INCOME' },
+  { id: 2, name: 'Freelance', icon: 'laptop', color: '#3B82F6', type: 'INCOME' },
+  { id: 3, name: 'Inversiones', icon: 'trending-up', color: '#8B5CF6', type: 'INCOME' },
+  { id: 4, name: 'Otros ingresos', icon: 'cash', color: '#6B7280', type: 'INCOME' },
+] as const;
+
+// All categories combined (for backward compatibility)
+export const CATEGORIES = [...INCOME_CATEGORIES, ...EXPENSE_CATEGORIES] as const;
+
+// Receipt category mapping to internal categories (expense categories)
 export const RECEIPT_CATEGORY_MAP: Record<string, number> = {
-  Food: 1,
-  Transport: 2,
-  Utilities: 3,
-  Shopping: 4,
-  Health: 5,
-  Entertainment: 6,
-  Other: 9,
+  Food: 5, // Supermercado
+  Transport: 7,
+  Utilities: 8, // Servicios
+  Shopping: 5, // Supermercado
+  Health: 10,
+  Entertainment: 9,
+  Other: 14, // Otros gastos
 };
 
 // Currency configuration

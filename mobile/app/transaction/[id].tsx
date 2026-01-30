@@ -12,7 +12,7 @@ import {
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTransaction, useUpdateTransaction, useDeleteTransaction } from '@/hooks/useTransactions';
-import { CATEGORIES } from '@/constants';
+import { CATEGORIES, EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '@/constants';
 import { showSuccess, showError, showConfirm } from '@/utils/feedback';
 import {
   formatCurrency,
@@ -278,7 +278,12 @@ export default function TransactionDetailScreen() {
                 {TRANSACTION_TYPES.map((t) => (
                   <TouchableOpacity
                     key={t.value}
-                    onPress={() => setEditType(t.value)}
+                    onPress={() => {
+                      setEditType(t.value);
+                      // Reset category to first of new type
+                      const categories = t.value === 'INCOME' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+                      setEditCategoryId(categories[0].id);
+                    }}
                     className={`flex-1 py-3 rounded-lg ${
                       editType === t.value ? 'bg-white shadow-sm' : ''
                     }`}
@@ -330,7 +335,7 @@ export default function TransactionDetailScreen() {
               <Text className="text-gray-600 mb-2">Categoria</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-6">
                 <View className="flex-row gap-2">
-                  {CATEGORIES.map((cat) => (
+                  {(editType === 'INCOME' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES).map((cat) => (
                     <TouchableOpacity
                       key={cat.id}
                       onPress={() => setEditCategoryId(cat.id)}

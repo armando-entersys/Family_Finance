@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { CATEGORIES } from '@/constants';
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, RECEIPT_CATEGORY_MAP } from '@/constants';
 import { useCreateTransaction } from '@/hooks/useTransactions';
 import { scanReceipt } from '@/services/receiptScanner';
 import { showSuccess, showError, showFeedback } from '@/utils/feedback';
@@ -29,12 +29,22 @@ export default function AddExpenseScreen() {
   const [type, setType] = useState<TransactionType>('EXPENSE');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
-  const [categoryId, setCategoryId] = useState<number>(1);
+  const [categoryId, setCategoryId] = useState<number>(EXPENSE_CATEGORIES[0].id);
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
 
   const createTransaction = useCreateTransaction();
+
+  // Get categories based on transaction type
+  const currentCategories = type === 'INCOME' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+
+  // Handle type change - reset category to first of the new type
+  const handleTypeChange = (newType: TransactionType) => {
+    setType(newType);
+    const categories = newType === 'INCOME' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+    setCategoryId(categories[0].id);
+  };
 
   // Pick image from gallery
   const pickImage = async () => {
@@ -91,11 +101,7 @@ export default function AddExpenseScreen() {
         setDescription(receipt.merchant_name);
       }
       if (receipt.category) {
-        const categoryMap: Record<string, number> = {
-          Food: 1, Transport: 2, Utilities: 3, Shopping: 4,
-          Health: 5, Entertainment: 6, Other: 9,
-        };
-        setCategoryId(categoryMap[receipt.category] || 9);
+        setCategoryId(RECEIPT_CATEGORY_MAP[receipt.category] || EXPENSE_CATEGORIES[0].id);
       }
       if (receipt.date) {
         setDate(receipt.date);
@@ -163,7 +169,7 @@ export default function AddExpenseScreen() {
             {TRANSACTION_TYPES.map((t) => (
               <TouchableOpacity
                 key={t.value}
-                onPress={() => setType(t.value)}
+                onPress={() => handleTypeChange(t.value)}
                 className={`flex-1 py-3 rounded-lg ${
                   type === t.value ? 'bg-white shadow-sm' : ''
                 }`}
@@ -265,7 +271,7 @@ export default function AddExpenseScreen() {
             <Text className="text-sm font-medium text-gray-700 mb-2">Categoria</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View className="flex-row gap-2">
-                {CATEGORIES.map((category) => (
+                {currentCategories.map((category) => (
                   <TouchableOpacity
                     key={category.id}
                     onPress={() => setCategoryId(category.id)}
