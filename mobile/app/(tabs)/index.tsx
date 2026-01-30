@@ -104,7 +104,10 @@ export default function HomeScreen() {
             </View>
             <Text className="text-gray-600 text-xs">Metas</Text>
           </TouchableOpacity>
-          <TouchableOpacity className="items-center">
+          <TouchableOpacity
+            onPress={() => router.push('/reports')}
+            className="items-center"
+          >
             <View className="w-12 h-12 bg-danger-50 rounded-full items-center justify-center mb-1">
               <Ionicons name="stats-chart-outline" size={24} color="#EF4444" />
             </View>

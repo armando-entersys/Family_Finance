@@ -16,7 +16,12 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
 }) => {
   const [permission, requestPermission] = useCameraPermissions();
   const [isCapturing, setIsCapturing] = useState(false);
+  const [facing, setFacing] = useState<CameraType>('back');
   const cameraRef = useRef<CameraView>(null);
+
+  const toggleCameraFacing = () => {
+    setFacing((current) => (current === 'back' ? 'front' : 'back'));
+  };
 
   // Handle camera permission
   if (!permission) {
@@ -98,7 +103,7 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
       <CameraView
         ref={cameraRef}
         style={{ flex: 1 }}
-        facing="back"
+        facing={facing}
       >
         {/* Overlay */}
         <View className="flex-1">
@@ -148,8 +153,13 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
                 <View className={`w-16 h-16 rounded-full border-4 border-gray-800 ${isCapturing ? 'bg-gray-400' : 'bg-white'}`} />
               </TouchableOpacity>
 
-              {/* Placeholder for symmetry */}
-              <View className="w-14 h-14" />
+              {/* Flip Camera Button */}
+              <TouchableOpacity
+                onPress={toggleCameraFacing}
+                className="w-14 h-14 rounded-full bg-white/20 items-center justify-center"
+              >
+                <Ionicons name="camera-reverse-outline" size={28} color="white" />
+              </TouchableOpacity>
             </View>
           </View>
         </View>
