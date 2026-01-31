@@ -10,6 +10,7 @@ export interface UserSettings {
 }
 
 export interface FamilySettings {
+  name: string;
   month_close_day: number;
   default_currency: string;
   budget_warning_threshold: number;
@@ -94,4 +95,10 @@ export const inviteFamilyMember = async (data: InviteMemberData): Promise<Family
 // Remove a family member (admin only)
 export const removeFamilyMember = async (memberId: string): Promise<void> => {
   await api.delete(API_ENDPOINTS.SETTINGS_FAMILY_MEMBER(memberId));
+};
+
+// Update family name (admin only)
+export const updateFamilyName = async (name: string): Promise<FamilySettings> => {
+  const response = await api.patch<FamilySettings>(`${API_ENDPOINTS.SETTINGS_FAMILY}/name`, { name });
+  return response.data;
 };

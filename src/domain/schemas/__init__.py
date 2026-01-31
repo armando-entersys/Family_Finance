@@ -41,6 +41,7 @@ from .user_settings import (
     UserSettingsResponse,
     FamilySettingsUpdate,
     FamilySettingsResponse,
+    FamilyNameUpdate,
     FamilyInvite,
     FamilyMemberResponse,
 )
@@ -81,6 +82,7 @@ __all__ = [
     "UserSettingsResponse",
     "FamilySettingsUpdate",
     "FamilySettingsResponse",
+    "FamilyNameUpdate",
     "FamilyInvite",
     "FamilyMemberResponse",
 ]

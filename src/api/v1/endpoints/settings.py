@@ -16,10 +16,12 @@ from src.domain.schemas import (
     UserSettingsResponse,
     FamilySettingsUpdate,
     FamilySettingsResponse,
+    FamilyNameUpdate,
     FamilyInvite,
     FamilyMemberResponse,
 )
 from src.core.security import hash_password
+from src.services.email_service import email_service
 
 router = APIRouter(prefix="/settings", tags=["Settings"])
 
@@ -139,6 +141,7 @@ async def get_family_settings(
     settings = family.settings or {}
 
     return FamilySettingsResponse(
+        name=family.name,
         month_close_day=settings.get("month_close_day", 1),
         default_currency=settings.get("default_currency", "MXN"),
         budget_warning_threshold=settings.get("budget_warning_threshold", 80),
@@ -183,9 +186,48 @@ async def update_family_settings(
     await db.flush()
 
     return FamilySettingsResponse(
+        name=family.name,
         month_close_day=data.month_close_day,
         default_currency=data.default_currency,
         budget_warning_threshold=data.budget_warning_threshold,
+    )
+
+
+@router.patch("/family/name", response_model=FamilySettingsResponse)
+async def update_family_name(
+    data: FamilyNameUpdate,
+    current_user: AdminUser,  # Requires ADMIN role
+    db: DbSession,
+) -> FamilySettingsResponse:
+    """Update family name (Admin only)."""
+    if not current_user.family_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User must belong to a family",
+        )
+
+    result = await db.execute(
+        select(Family).where(Family.id == current_user.family_id)
+    )
+    family = result.scalar_one_or_none()
+
+    if not family:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Family not found",
+        )
+
+    # Update name
+    family.name = data.name
+    await db.flush()
+
+    settings = family.settings or {}
+
+    return FamilySettingsResponse(
+        name=family.name,
+        month_close_day=settings.get("month_close_day", 1),
+        default_currency=settings.get("default_currency", "MXN"),
+        budget_warning_threshold=settings.get("budget_warning_threshold", 80),
     )
 
 
@@ -264,7 +306,23 @@ async def invite_family_member(
     await db.flush()
     await db.refresh(new_user)
 
-    # TODO: Send invitation email with temp_password
+    # Get family name for the email
+    result = await db.execute(
+        select(Family).where(Family.id == current_user.family_id)
+    )
+    family = result.scalar_one_or_none()
+    family_name = family.name if family else "Tu Familia"
+
+    # Get inviter name
+    inviter_name = current_user.name or current_user.email.split("@")[0]
+
+    # Send invitation email
+    email_service.send_family_invitation(
+        to_email=new_user.email,
+        family_name=family_name,
+        inviter_name=inviter_name,
+        temp_password=temp_password,
+    )
 
     return FamilyMemberResponse(
         id=str(new_user.id),

@@ -88,6 +88,10 @@ class Settings(BaseSettings):
     # Currency
     base_currency: str = "MXN"
 
+    # Email (SMTP)
+    smtp_email: str = ""
+    smtp_password: str = ""
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_cors_origins(cls, v):

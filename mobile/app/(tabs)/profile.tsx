@@ -19,6 +19,7 @@ import {
   useUpdateUserSettings,
   useFamilySettings,
   useUpdateFamilySettings,
+  useUpdateFamilyName,
   useFamilyMembers,
   useInviteFamilyMember,
   useRemoveFamilyMember,
@@ -57,6 +58,7 @@ export default function ProfileScreen() {
   // Mutations
   const updateUserSettingsMutation = useUpdateUserSettings();
   const updateFamilySettingsMutation = useUpdateFamilySettings();
+  const updateFamilyNameMutation = useUpdateFamilyName();
   const inviteMemberMutation = useInviteFamilyMember();
   const removeMemberMutation = useRemoveFamilyMember();
 
@@ -72,6 +74,8 @@ export default function ProfileScreen() {
   const [inviteRole, setInviteRole] = useState<'MEMBER' | 'ADMIN'>('MEMBER');
   const [editName, setEditName] = useState(user?.name || '');
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+  const [editFamilyName, setEditFamilyName] = useState('');
+  const [isEditingFamilyName, setIsEditingFamilyName] = useState(false);
 
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -178,6 +182,31 @@ export default function ProfileScreen() {
   const openEditProfileModal = () => {
     setEditName(user?.name || '');
     setShowEditProfileModal(true);
+  };
+
+  const handleUpdateFamilyName = async () => {
+    if (!editFamilyName.trim()) {
+      if (Platform.OS === 'web') {
+        window.alert('Error: El nombre de la familia no puede estar vacio');
+      }
+      return;
+    }
+    try {
+      await updateFamilyNameMutation.mutateAsync(editFamilyName.trim());
+      setIsEditingFamilyName(false);
+      if (Platform.OS === 'web') {
+        window.alert('Nombre de familia actualizado correctamente');
+      }
+    } catch (error) {
+      if (Platform.OS === 'web') {
+        window.alert('Error: No se pudo actualizar el nombre de la familia');
+      }
+    }
+  };
+
+  const startEditingFamilyName = () => {
+    setEditFamilyName(familySettings?.name || '');
+    setIsEditingFamilyName(true);
   };
 
   const currentCurrency = CURRENCIES.find((c) => c.code === userSettings?.preferred_currency) || CURRENCIES[0];
@@ -404,6 +433,53 @@ export default function ProfileScreen() {
               <TouchableOpacity onPress={() => setShowFamilyModal(false)}>
                 <Ionicons name="close" size={24} color="#6B7280" />
               </TouchableOpacity>
+            </View>
+
+            {/* Family Name Section */}
+            <View className="mb-4">
+              <Text className="text-gray-600 mb-2">Nombre de la Familia</Text>
+              {isEditingFamilyName ? (
+                <View className="flex-row items-center gap-2">
+                  <TextInput
+                    className="flex-1 bg-gray-100 rounded-xl px-4 py-3 text-gray-900"
+                    placeholder="Nombre de la familia"
+                    value={editFamilyName}
+                    onChangeText={setEditFamilyName}
+                    autoCapitalize="words"
+                  />
+                  <TouchableOpacity
+                    onPress={handleUpdateFamilyName}
+                    disabled={updateFamilyNameMutation.isPending}
+                    className="bg-primary-600 p-3 rounded-xl"
+                  >
+                    {updateFamilyNameMutation.isPending ? (
+                      <ActivityIndicator size="small" color="white" />
+                    ) : (
+                      <Ionicons name="checkmark" size={20} color="white" />
+                    )}
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setIsEditingFamilyName(false)}
+                    className="bg-gray-200 p-3 rounded-xl"
+                  >
+                    <Ionicons name="close" size={20} color="#6B7280" />
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <View className="flex-row items-center bg-gray-50 rounded-xl p-3">
+                  <View className="w-10 h-10 bg-primary-100 rounded-full items-center justify-center mr-3">
+                    <Ionicons name="home" size={20} color="#4F46E5" />
+                  </View>
+                  <Text className="flex-1 text-gray-900 font-medium text-lg">
+                    {familySettings?.name || 'Sin nombre'}
+                  </Text>
+                  {isAdmin && (
+                    <TouchableOpacity onPress={startEditingFamilyName} className="p-2">
+                      <Ionicons name="pencil" size={20} color="#4F46E5" />
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )}
             </View>
 
             {/* Members List */}

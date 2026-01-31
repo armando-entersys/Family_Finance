@@ -43,6 +43,18 @@ export const useUpdateFamilySettings = () => {
   });
 };
 
+// Update family name (admin only)
+export const useUpdateFamilyName = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (name: string) => settingsService.updateFamilyName(name),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.SETTINGS_FAMILY });
+    },
+  });
+};
+
 // Get family members
 export const useFamilyMembers = () => {
   return useQuery({

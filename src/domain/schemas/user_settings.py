@@ -36,9 +36,16 @@ class FamilySettingsUpdate(BaseModel):
     budget_warning_threshold: int = Field(default=80, ge=50, le=100)
 
 
+class FamilyNameUpdate(BaseModel):
+    """Schema for updating family name."""
+
+    name: str = Field(..., min_length=1, max_length=100)
+
+
 class FamilySettingsResponse(BaseModel):
     """Schema for family settings response."""
 
+    name: str = ""
     month_close_day: int
     default_currency: str
     budget_warning_threshold: int
