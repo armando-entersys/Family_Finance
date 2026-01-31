@@ -21,7 +21,11 @@ export default function HomeScreen() {
   const { data: transactionsData } = useTransactionsInfinite({ type: undefined });
   const deleteTransaction = useDeleteTransaction();
 
-  const recentTransactions = transactionsData?.pages[0]?.items.slice(0, 5) || [];
+  // Sort transactions by date descending and take the 5 most recent
+  const recentTransactions = (transactionsData?.pages[0]?.items || [])
+    .slice()
+    .sort((a, b) => new Date(b.trx_date).getTime() - new Date(a.trx_date).getTime())
+    .slice(0, 5);
 
   const handleDelete = async (id: string) => {
     try {
