@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Alert, Platform } from 'react-native';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
@@ -17,7 +17,15 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
   const [permission, requestPermission] = useCameraPermissions();
   const [isCapturing, setIsCapturing] = useState(false);
   const [facing, setFacing] = useState<CameraType>('back');
+  const [cameraKey, setCameraKey] = useState(0);
   const cameraRef = useRef<CameraView>(null);
+
+  // Force remount camera on web to ensure back camera is used
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      setCameraKey((prev) => prev + 1);
+    }
+  }, [facing]);
 
   const toggleCameraFacing = () => {
     setFacing((current) => (current === 'back' ? 'front' : 'back'));
@@ -101,9 +109,11 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
     <View className="flex-1 bg-black">
       {/* Camera View */}
       <CameraView
+        key={cameraKey}
         ref={cameraRef}
         style={{ flex: 1 }}
         facing={facing}
+        videoQuality="720p"
       >
         {/* Overlay */}
         <View className="flex-1">

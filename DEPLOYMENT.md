@@ -240,7 +240,39 @@ gcloud compute ssh prod-server --zone=us-central1-c --command="cd /srv/scram-app
 
 ---
 
-## Mobile App Deployment
+## Frontend Web Deployment
+
+The frontend web app (Expo/React Native for Web) is deployed at `https://app.family-finance.scram2k.com`
+
+### Deploy Frontend Web
+
+**Step 1: Rebuild and deploy frontend container**
+```bash
+gcloud compute ssh prod-server --zone=us-central1-c --command="cd /srv/scram-apps/Family-Finance && sudo docker compose build frontend && sudo docker compose up -d frontend"
+```
+
+**Step 2: Verify deployment**
+```bash
+# Check container status
+gcloud compute ssh prod-server --zone=us-central1-c --command="sudo docker ps --filter name=family-finance-web --format 'table {{.Names}}\t{{.Status}}'"
+
+# Test web app
+curl -s -o /dev/null -w "%{http_code}" "https://app.family-finance.scram2k.com/"
+```
+
+### One-Line Frontend Deployment
+```bash
+gcloud compute ssh prod-server --zone=us-central1-c --command="cd /srv/scram-apps/Family-Finance && sudo git pull origin main && sudo docker compose build frontend && sudo docker compose up -d frontend"
+```
+
+### Full Stack Deployment (API + Frontend)
+```bash
+gcloud compute ssh prod-server --zone=us-central1-c --command="cd /srv/scram-apps/Family-Finance && sudo git pull origin main && sudo docker compose build api frontend && sudo docker compose up -d api frontend"
+```
+
+---
+
+## Mobile App Development
 
 The mobile app (Expo/React Native) is located in `/mobile` directory.
 
