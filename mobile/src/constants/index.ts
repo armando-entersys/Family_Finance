@@ -9,6 +9,7 @@ export const API_ENDPOINTS = {
   REGISTER: '/api/v1/auth/register',
   REFRESH: '/api/v1/auth/refresh',
   ME: '/api/v1/auth/me',
+  COMPLETE_ONBOARDING: '/api/v1/auth/complete-onboarding',
 
   // Transactions
   TRANSACTIONS: '/api/v1/transactions',

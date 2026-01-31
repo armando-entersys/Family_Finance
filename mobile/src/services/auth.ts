@@ -138,4 +138,14 @@ export const refreshTokens = async (): Promise<AuthTokens> => {
   return tokens;
 };
 
+// Complete onboarding tutorial
+export const completeOnboarding = async (): Promise<User> => {
+  const response = await api.post<User>(API_ENDPOINTS.COMPLETE_ONBOARDING);
+
+  // Update stored user
+  await storage.setItem(STORAGE_KEYS.USER, JSON.stringify(response.data));
+
+  return response.data;
+};
+
 export { getErrorMessage };

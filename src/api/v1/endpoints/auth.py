@@ -190,3 +190,17 @@ async def update_current_user(
     await db.refresh(current_user)
 
     return current_user
+
+
+@router.post("/complete-onboarding", response_model=UserResponse)
+async def complete_onboarding(
+    current_user: CurrentUser,
+    db: DbSession,
+) -> User:
+    """
+    Mark user as having completed the onboarding tutorial.
+    """
+    current_user.has_completed_onboarding = True
+    await db.commit()
+    await db.refresh(current_user)
+    return current_user

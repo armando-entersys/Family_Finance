@@ -48,6 +48,7 @@ class UserResponse(BaseModel):
     role: str
     family_id: Optional[uuid.UUID] = None
     is_active: bool
+    has_completed_onboarding: bool = False
 
     model_config = {"from_attributes": True}
 

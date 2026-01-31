@@ -65,6 +65,11 @@ class User(Base, TimestampMixin):
         default=True,
         nullable=False,
     )
+    has_completed_onboarding: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+    )
 
     # Relationships
     family: Mapped[Optional["Family"]] = relationship(

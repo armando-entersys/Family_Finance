@@ -9,6 +9,7 @@ export interface User {
   role: 'ADMIN' | 'MEMBER';
   family_id: string | null;
   is_active: boolean;
+  has_completed_onboarding: boolean;
 }
 
 export interface AuthTokens {

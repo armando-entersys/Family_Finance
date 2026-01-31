@@ -1,9 +1,19 @@
+import React, { useState, useEffect } from 'react';
 import { Tabs, Redirect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/stores/authStore';
+import { OnboardingModal } from '@/components/onboarding/OnboardingModal';
 
 export default function TabsLayout() {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // Show onboarding for new users
+  useEffect(() => {
+    if (user && !user.has_completed_onboarding) {
+      setShowOnboarding(true);
+    }
+  }, [user]);
 
   // Redirect to login if not authenticated
   if (!isAuthenticated) {
@@ -11,7 +21,12 @@ export default function TabsLayout() {
   }
 
   return (
-    <Tabs
+    <>
+      <OnboardingModal
+        visible={showOnboarding}
+        onComplete={() => setShowOnboarding(false)}
+      />
+      <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: '#4F46E5',
@@ -85,5 +100,6 @@ export default function TabsLayout() {
         }}
       />
     </Tabs>
+    </>
   );
 }

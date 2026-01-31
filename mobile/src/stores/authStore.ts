@@ -16,6 +16,7 @@ interface AuthState {
   logout: () => Promise<void>;
   restoreSession: () => Promise<void>;
   updateProfile: (data: { name?: string; email?: string }) => Promise<void>;
+  completeOnboarding: () => Promise<void>;
   clearError: () => void;
 }
 
@@ -138,6 +139,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         error: message,
       });
       throw error;
+    }
+  },
+
+  completeOnboarding: async () => {
+    try {
+      const user = await authService.completeOnboarding();
+      set({ user });
+    } catch (error) {
+      console.error('Failed to complete onboarding:', error);
     }
   },
 
