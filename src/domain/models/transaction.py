@@ -108,6 +108,12 @@ class Transaction(Base):
         nullable=True,
     )
 
+    # SAT invoice flag (for Mexican tax deductions)
+    is_invoiced: Mapped[bool] = mapped_column(
+        default=False,
+        nullable=False,
+    )
+
     # Idempotency key for offline sync
     sync_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),

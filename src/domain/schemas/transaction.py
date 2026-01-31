@@ -23,6 +23,7 @@ class TransactionCreate(BaseModel):
     category_id: Optional[int] = None
     description: Optional[str] = Field(None, max_length=500)
     trx_date: Optional[datetime] = None
+    is_invoiced: bool = Field(default=False)  # SAT invoice flag
     sync_id: Optional[uuid.UUID] = None  # Client-generated for idempotency
 
     @field_validator("currency_code")
@@ -40,6 +41,7 @@ class TransactionUpdate(BaseModel):
     category_id: Optional[int] = None
     description: Optional[str] = Field(None, max_length=500)
     trx_date: Optional[datetime] = None
+    is_invoiced: Optional[bool] = None  # SAT invoice flag
 
 
 class TransactionResponse(BaseModel):
@@ -58,6 +60,7 @@ class TransactionResponse(BaseModel):
     description: Optional[str]
     attachment_url: Optional[str]
     attachment_thumb_url: Optional[str]
+    is_invoiced: bool
     sync_id: uuid.UUID
     created_at: datetime
 

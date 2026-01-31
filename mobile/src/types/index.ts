@@ -32,6 +32,7 @@ export interface Transaction {
   description: string | null;
   attachment_url: string | null;
   attachment_thumb_url: string | null;
+  is_invoiced: boolean;
   sync_id: string | null;
   created_at: string;
 }
@@ -46,6 +47,7 @@ export interface TransactionCreate {
   category_id?: number;
   description?: string;
   trx_date?: string;
+  is_invoiced?: boolean;
   sync_id?: string;
 }
 
@@ -56,6 +58,7 @@ export interface TransactionUpdate {
   category_id?: number;
   description?: string;
   trx_date?: string;
+  is_invoiced?: boolean;
 }
 
 export interface PaginatedResponse<T> {

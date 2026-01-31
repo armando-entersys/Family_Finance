@@ -60,6 +60,12 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
           <Text className="text-sm text-gray-500">
             {formatRelativeTime(transaction.trx_date)}
           </Text>
+          {transaction.is_invoiced && (
+            <>
+              <View className="w-1 h-1 rounded-full bg-gray-400 mx-2" />
+              <Ionicons name="receipt" size={14} color="#10B981" />
+            </>
+          )}
           {transaction.attachment_url && (
             <>
               <View className="w-1 h-1 rounded-full bg-gray-400 mx-2" />

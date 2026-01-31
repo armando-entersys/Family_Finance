@@ -40,6 +40,7 @@ export default function TransactionDetailScreen() {
   const [editDescription, setEditDescription] = useState('');
   const [editCategoryId, setEditCategoryId] = useState<number>(1);
   const [editDate, setEditDate] = useState('');
+  const [editIsInvoiced, setEditIsInvoiced] = useState(false);
 
   // Initialize edit form when transaction loads
   useEffect(() => {
@@ -49,6 +50,7 @@ export default function TransactionDetailScreen() {
       setEditDescription(transaction.description || '');
       setEditCategoryId(transaction.category_id || 1);
       setEditDate(transaction.trx_date.split('T')[0]);
+      setEditIsInvoiced(transaction.is_invoiced || false);
     }
   }, [transaction]);
 
@@ -90,6 +92,7 @@ export default function TransactionDetailScreen() {
           category_id: editCategoryId,
           description: editDescription || undefined,
           trx_date: new Date(editDate).toISOString(),
+          is_invoiced: editIsInvoiced,
         },
       });
       setShowEditModal(false);
@@ -228,7 +231,7 @@ export default function TransactionDetailScreen() {
               </View>
             </View>
 
-            <View className="flex-row items-center px-4 py-3.5">
+            <View className="flex-row items-center px-4 py-3.5 border-b border-gray-100">
               <View className="w-9 h-9 bg-gray-100 rounded-full items-center justify-center mr-3">
                 <Ionicons name="time-outline" size={20} color="#6B7280" />
               </View>
@@ -236,6 +239,25 @@ export default function TransactionDetailScreen() {
                 <Text className="text-sm text-gray-500">Registrado</Text>
                 <Text className="text-gray-900 font-medium">
                   {formatDate(transaction.created_at, 'd MMM yyyy, HH:mm')}
+                </Text>
+              </View>
+            </View>
+
+            <View className="flex-row items-center px-4 py-3.5">
+              <View
+                className="w-9 h-9 rounded-full items-center justify-center mr-3"
+                style={{ backgroundColor: transaction.is_invoiced ? '#D1FAE5' : '#F3F4F6' }}
+              >
+                <Ionicons
+                  name="receipt"
+                  size={20}
+                  color={transaction.is_invoiced ? '#10B981' : '#6B7280'}
+                />
+              </View>
+              <View className="flex-1">
+                <Text className="text-sm text-gray-500">Factura SAT</Text>
+                <Text className={`font-medium ${transaction.is_invoiced ? 'text-green-600' : 'text-gray-900'}`}>
+                  {transaction.is_invoiced ? 'Facturado' : 'Sin factura'}
                 </Text>
               </View>
             </View>
@@ -333,7 +355,7 @@ export default function TransactionDetailScreen() {
 
               {/* Category Selection */}
               <Text className="text-gray-600 mb-2">Categoria</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-6">
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
                 <View className="flex-row gap-2">
                   {(editType === 'INCOME' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES).map((cat) => (
                     <TouchableOpacity
@@ -359,6 +381,41 @@ export default function TransactionDetailScreen() {
                   ))}
                 </View>
               </ScrollView>
+
+              {/* SAT Invoice Toggle */}
+              <TouchableOpacity
+                onPress={() => setEditIsInvoiced(!editIsInvoiced)}
+                className={`flex-row items-center justify-between p-4 rounded-xl mb-6 ${
+                  editIsInvoiced ? 'bg-green-50' : 'bg-gray-100'
+                }`}
+              >
+                <View className="flex-row items-center">
+                  <Ionicons
+                    name="receipt"
+                    size={24}
+                    color={editIsInvoiced ? '#10B981' : '#6B7280'}
+                  />
+                  <View className="ml-3">
+                    <Text className={`font-medium ${editIsInvoiced ? 'text-green-700' : 'text-gray-700'}`}>
+                      Factura SAT
+                    </Text>
+                    <Text className="text-sm text-gray-500">
+                      {editIsInvoiced ? 'Tiene factura fiscal' : 'Sin factura fiscal'}
+                    </Text>
+                  </View>
+                </View>
+                <View
+                  className={`w-12 h-7 rounded-full p-1 ${
+                    editIsInvoiced ? 'bg-green-500' : 'bg-gray-300'
+                  }`}
+                >
+                  <View
+                    className={`w-5 h-5 rounded-full bg-white ${
+                      editIsInvoiced ? 'ml-auto' : ''
+                    }`}
+                  />
+                </View>
+              </TouchableOpacity>
 
               {/* Save Button */}
               <TouchableOpacity
