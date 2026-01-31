@@ -1,7 +1,7 @@
 """Add has_completed_onboarding field to users table
 
-Revision ID: 006
-Revises: 005
+Revision ID: 006_add_user_onboarding
+Revises: 005_add_transaction_invoiced
 Create Date: 2026-01-31
 
 """
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '006'
-down_revision: Union[str, None] = '005'
+revision: str = '006_add_user_onboarding'
+down_revision: Union[str, None] = '005_add_transaction_invoiced'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
