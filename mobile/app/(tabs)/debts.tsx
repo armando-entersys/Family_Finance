@@ -14,6 +14,7 @@ import { formatCurrency, formatPercentage } from '@/utils/format';
 import { useDebts, useDebtSummary, useCreateDebt, useUpdateDebt, useAddPayment } from '@/hooks/useDebts';
 import { showSuccess, showError, showFeedback } from '@/utils/feedback';
 import { DateInput } from '@/components/common/DateInput';
+import { CurrencyInputSmall } from '@/components/common/CurrencyInput';
 import type { Debt, CreateDebtData } from '@/services/debts';
 
 const DEBT_TYPES = [
@@ -395,14 +396,13 @@ export default function DebtsScreen() {
               onChangeText={setNewCreditor}
             />
 
-            <Text className="text-gray-600 mb-2">Monto de la deuda (MXN)</Text>
-            <TextInput
-              className="bg-gray-100 rounded-xl px-4 py-3 text-gray-900 mb-4"
-              placeholder="15000"
-              keyboardType="numeric"
+            <CurrencyInputSmall
+              label="Monto de la deuda (MXN)"
               value={newAmount}
-              onChangeText={setNewAmount}
+              onChange={setNewAmount}
+              placeholder="15,000.00"
             />
+            <View className="mb-4" />
 
             <Text className="text-gray-600 mb-2">Tipo de deuda</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-6">
@@ -607,14 +607,13 @@ export default function DebtsScreen() {
               </View>
             )}
 
-            <Text className="text-gray-600 mb-2">Monto del pago (MXN)</Text>
-            <TextInput
-              className="bg-gray-100 rounded-xl px-4 py-3 text-gray-900 mb-6 text-xl"
-              placeholder="0.00"
-              keyboardType="numeric"
+            <CurrencyInputSmall
+              label="Monto del pago (MXN)"
               value={paymentAmount}
-              onChangeText={setPaymentAmount}
+              onChange={setPaymentAmount}
+              placeholder="0.00"
             />
+            <View className="mb-6" />
 
             <TouchableOpacity
               className="bg-green-500 py-4 rounded-xl items-center"

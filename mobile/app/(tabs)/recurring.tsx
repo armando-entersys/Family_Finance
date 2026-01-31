@@ -27,6 +27,7 @@ import {
 import { showSuccess, showError } from '@/utils/feedback';
 import { EXPENSE_CATEGORIES, FREQUENCIES, BUDGET_PERIODS } from '@/constants';
 import { DateInput } from '@/components/common/DateInput';
+import { CurrencyInputSmall } from '@/components/common/CurrencyInput';
 import type { RecurringExpense, FrequencyType } from '@/services/recurringExpenses';
 import type { CategoryBudgetStatus, BudgetPeriod } from '@/services/categoryBudgets';
 
@@ -498,14 +499,13 @@ export default function RecurringScreen() {
                 onChangeText={setExpenseName}
               />
 
-              <Text className="text-gray-600 mb-2">Monto (MXN)</Text>
-              <TextInput
-                className="bg-gray-100 rounded-xl px-4 py-3 text-gray-900 mb-4"
-                placeholder="199"
-                keyboardType="numeric"
+              <CurrencyInputSmall
+                label="Monto (MXN)"
                 value={expenseAmount}
-                onChangeText={setExpenseAmount}
+                onChange={setExpenseAmount}
+                placeholder="199.00"
               />
+              <View className="mb-4" />
 
               <Text className="text-gray-600 mb-2">Categoria</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
@@ -650,14 +650,13 @@ export default function RecurringScreen() {
               </>
             )}
 
-            <Text className="text-gray-600 mb-2">Monto limite (MXN)</Text>
-            <TextInput
-              className="bg-gray-100 rounded-xl px-4 py-3 text-gray-900 mb-4"
-              placeholder="5000"
-              keyboardType="numeric"
+            <CurrencyInputSmall
+              label="Monto limite (MXN)"
               value={budgetAmount}
-              onChangeText={setBudgetAmount}
+              onChange={setBudgetAmount}
+              placeholder="5,000.00"
             />
+            <View className="mb-4" />
 
             <Text className="text-gray-600 mb-2">Periodo</Text>
             <View className="flex-row gap-2 mb-4">

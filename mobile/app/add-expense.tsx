@@ -19,6 +19,7 @@ import { useCreateTransaction } from '@/hooks/useTransactions';
 import { scanReceipt } from '@/services/receiptScanner';
 import { showSuccess, showError, showFeedback } from '@/utils/feedback';
 import { DateInput } from '@/components/common/DateInput';
+import { CurrencyInput } from '@/components/common/CurrencyInput';
 import type { TransactionType, ParsedReceipt } from '@/types';
 
 const TRANSACTION_TYPES: { label: string; value: TransactionType; color: string }[] = [
@@ -235,19 +236,13 @@ export default function AddExpenseScreen() {
           </View>
 
           {/* Amount */}
-          <View className="mb-4">
-            <Text className="text-sm font-medium text-gray-700 mb-2">Monto *</Text>
-            <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-xl px-4">
-              <Text className="text-2xl font-bold text-gray-400 mr-2">$</Text>
-              <Input
-                value={amount}
-                onChangeText={setAmount}
-                keyboardType="decimal-pad"
-                placeholder="0.00"
-                className="flex-1 text-2xl font-bold border-0 bg-transparent px-0"
-              />
-            </View>
-          </View>
+          <CurrencyInput
+            label="Monto *"
+            value={amount}
+            onChange={setAmount}
+            placeholder="0.00"
+            className="mb-4"
+          />
 
           {/* Description */}
           <Input

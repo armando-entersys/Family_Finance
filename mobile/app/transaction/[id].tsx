@@ -21,6 +21,7 @@ import {
   getTransactionTypeColor,
 } from '@/utils/format';
 import { DateInput } from '@/components/common/DateInput';
+import { CurrencyInput } from '@/components/common/CurrencyInput';
 import type { TransactionType } from '@/types';
 
 const TRANSACTION_TYPES: { label: string; value: TransactionType; color: string }[] = [
@@ -324,17 +325,13 @@ export default function TransactionDetailScreen() {
               </View>
 
               {/* Amount */}
-              <Text className="text-gray-600 mb-2">Monto</Text>
-              <View className="flex-row items-center bg-gray-100 rounded-xl px-4 mb-4">
-                <Text className="text-2xl font-bold text-gray-400 mr-2">$</Text>
-                <TextInput
-                  value={editAmount}
-                  onChangeText={setEditAmount}
-                  keyboardType="decimal-pad"
-                  placeholder="0.00"
-                  className="flex-1 text-2xl font-bold py-3"
-                />
-              </View>
+              <CurrencyInput
+                label="Monto"
+                value={editAmount}
+                onChange={setEditAmount}
+                placeholder="0.00"
+                className="mb-4"
+              />
 
               {/* Description */}
               <Text className="text-gray-600 mb-2">Descripcion</Text>

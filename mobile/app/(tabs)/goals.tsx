@@ -15,6 +15,7 @@ import { formatCurrency, formatPercentage } from '@/utils/format';
 import { useGoals, useCreateGoal, useUpdateGoal, useDeleteGoal, useAddContribution } from '@/hooks/useGoals';
 import { showSuccess, showError } from '@/utils/feedback';
 import { DateInput } from '@/components/common/DateInput';
+import { CurrencyInput, CurrencyInputSmall } from '@/components/common/CurrencyInput';
 import type { Goal } from '@/services/goals';
 
 const GOAL_ICONS = [
@@ -338,14 +339,13 @@ export default function GoalsScreen() {
               onChangeText={setNewGoalName}
             />
 
-            <Text className="text-gray-600 mb-2">Monto objetivo (MXN)</Text>
-            <TextInput
-              className="bg-gray-100 rounded-xl px-4 py-3 text-gray-900 mb-4"
-              placeholder="50000"
-              keyboardType="numeric"
+            <CurrencyInputSmall
+              label="Monto objetivo (MXN)"
               value={newGoalAmount}
-              onChangeText={setNewGoalAmount}
+              onChange={setNewGoalAmount}
+              placeholder="50,000.00"
             />
+            <View className="mb-4" />
 
             <Text className="text-gray-600 mb-2">Icono</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-6">
@@ -405,14 +405,13 @@ export default function GoalsScreen() {
               onChangeText={setEditGoalName}
             />
 
-            <Text className="text-gray-600 mb-2">Monto objetivo (MXN)</Text>
-            <TextInput
-              className="bg-gray-100 rounded-xl px-4 py-3 text-gray-900 mb-4"
-              placeholder="50000"
-              keyboardType="numeric"
+            <CurrencyInputSmall
+              label="Monto objetivo (MXN)"
               value={editGoalAmount}
-              onChangeText={setEditGoalAmount}
+              onChange={setEditGoalAmount}
+              placeholder="50,000.00"
             />
+            <View className="mb-4" />
 
             <DateInput
               label="Fecha limite (opcional)"
@@ -528,16 +527,13 @@ export default function GoalsScreen() {
               </View>
             )}
 
-            <Text className="text-gray-600 mb-2">
-              Monto a {isWithdrawal ? 'retirar' : 'agregar'} (MXN)
-            </Text>
-            <TextInput
-              className="bg-gray-100 rounded-xl px-4 py-3 text-gray-900 mb-6 text-xl"
-              placeholder="0.00"
-              keyboardType="numeric"
+            <CurrencyInputSmall
+              label={`Monto a ${isWithdrawal ? 'retirar' : 'agregar'} (MXN)`}
               value={contributionAmount}
-              onChangeText={setContributionAmount}
+              onChange={setContributionAmount}
+              placeholder="0.00"
             />
+            <View className="mb-6" />
 
             {isWithdrawal && (
               <View className="bg-yellow-50 rounded-xl p-4 mb-4 flex-row items-start">
