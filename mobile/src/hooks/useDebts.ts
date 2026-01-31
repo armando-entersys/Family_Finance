@@ -19,6 +19,9 @@ export const useDebtSummary = () => {
   });
 };
 
+// Alias for backward compatibility
+export const useDebtsSummary = useDebtSummary;
+
 // Get single debt with payments
 export const useDebt = (debtId: string | undefined) => {
   return useQuery({
