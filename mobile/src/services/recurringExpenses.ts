@@ -1,4 +1,4 @@
-import { apiClient } from './api';
+import api from './api';
 import { API_ENDPOINTS } from '@/constants';
 
 export interface RecurringExpense {
@@ -49,24 +49,24 @@ export interface ExecuteRecurringExpenseData {
 }
 
 export async function getRecurringExpenses(includeInactive = false): Promise<RecurringExpense[]> {
-  const response = await apiClient.get<RecurringExpense[]>(
+  const response = await api.get<RecurringExpense[]>(
     `${API_ENDPOINTS.RECURRING_EXPENSES}?include_inactive=${includeInactive}`
   );
   return response.data;
 }
 
 export async function getDueExpenses(): Promise<RecurringExpense[]> {
-  const response = await apiClient.get<RecurringExpense[]>(API_ENDPOINTS.RECURRING_EXPENSES_DUE);
+  const response = await api.get<RecurringExpense[]>(API_ENDPOINTS.RECURRING_EXPENSES_DUE);
   return response.data;
 }
 
 export async function getRecurringExpense(id: string): Promise<RecurringExpense> {
-  const response = await apiClient.get<RecurringExpense>(API_ENDPOINTS.RECURRING_EXPENSE(id));
+  const response = await api.get<RecurringExpense>(API_ENDPOINTS.RECURRING_EXPENSE(id));
   return response.data;
 }
 
 export async function createRecurringExpense(data: CreateRecurringExpenseData): Promise<RecurringExpense> {
-  const response = await apiClient.post<RecurringExpense>(API_ENDPOINTS.RECURRING_EXPENSES, data);
+  const response = await api.post<RecurringExpense>(API_ENDPOINTS.RECURRING_EXPENSES, data);
   return response.data;
 }
 
@@ -74,18 +74,18 @@ export async function updateRecurringExpense(
   id: string,
   data: UpdateRecurringExpenseData
 ): Promise<RecurringExpense> {
-  const response = await apiClient.patch<RecurringExpense>(API_ENDPOINTS.RECURRING_EXPENSE(id), data);
+  const response = await api.patch<RecurringExpense>(API_ENDPOINTS.RECURRING_EXPENSE(id), data);
   return response.data;
 }
 
 export async function deleteRecurringExpense(id: string): Promise<void> {
-  await apiClient.delete(API_ENDPOINTS.RECURRING_EXPENSE(id));
+  await api.delete(API_ENDPOINTS.RECURRING_EXPENSE(id));
 }
 
 export async function executeRecurringExpense(
   id: string,
   data?: ExecuteRecurringExpenseData
 ): Promise<any> {
-  const response = await apiClient.post(API_ENDPOINTS.RECURRING_EXPENSE_EXECUTE(id), data || {});
+  const response = await api.post(API_ENDPOINTS.RECURRING_EXPENSE_EXECUTE(id), data || {});
   return response.data;
 }

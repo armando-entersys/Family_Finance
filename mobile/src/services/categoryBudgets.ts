@@ -1,4 +1,4 @@
-import { apiClient } from './api';
+import api from './api';
 import { API_ENDPOINTS } from '@/constants';
 
 export interface CategoryBudget {
@@ -49,22 +49,22 @@ export interface UpdateCategoryBudgetData {
 }
 
 export async function getCategoryBudgets(): Promise<CategoryBudget[]> {
-  const response = await apiClient.get<CategoryBudget[]>(API_ENDPOINTS.CATEGORY_BUDGETS);
+  const response = await api.get<CategoryBudget[]>(API_ENDPOINTS.CATEGORY_BUDGETS);
   return response.data;
 }
 
 export async function getCategoryBudgetsStatus(): Promise<CategoryBudgetStatus[]> {
-  const response = await apiClient.get<CategoryBudgetStatus[]>(API_ENDPOINTS.CATEGORY_BUDGETS_STATUS);
+  const response = await api.get<CategoryBudgetStatus[]>(API_ENDPOINTS.CATEGORY_BUDGETS_STATUS);
   return response.data;
 }
 
 export async function getCategoryBudget(id: string): Promise<CategoryBudget> {
-  const response = await apiClient.get<CategoryBudget>(API_ENDPOINTS.CATEGORY_BUDGET(id));
+  const response = await api.get<CategoryBudget>(API_ENDPOINTS.CATEGORY_BUDGET(id));
   return response.data;
 }
 
 export async function createCategoryBudget(data: CreateCategoryBudgetData): Promise<CategoryBudget> {
-  const response = await apiClient.post<CategoryBudget>(API_ENDPOINTS.CATEGORY_BUDGETS, data);
+  const response = await api.post<CategoryBudget>(API_ENDPOINTS.CATEGORY_BUDGETS, data);
   return response.data;
 }
 
@@ -72,10 +72,10 @@ export async function updateCategoryBudget(
   id: string,
   data: UpdateCategoryBudgetData
 ): Promise<CategoryBudget> {
-  const response = await apiClient.patch<CategoryBudget>(API_ENDPOINTS.CATEGORY_BUDGET(id), data);
+  const response = await api.patch<CategoryBudget>(API_ENDPOINTS.CATEGORY_BUDGET(id), data);
   return response.data;
 }
 
 export async function deleteCategoryBudget(id: string): Promise<void> {
-  await apiClient.delete(API_ENDPOINTS.CATEGORY_BUDGET(id));
+  await api.delete(API_ENDPOINTS.CATEGORY_BUDGET(id));
 }
