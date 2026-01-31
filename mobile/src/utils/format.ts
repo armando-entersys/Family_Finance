@@ -2,7 +2,8 @@ import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { CURRENCIES } from '@/constants';
 
-// Format currency amount
+// Format currency amount with comma thousands separator and 2 decimals
+// Example: $4,300.00
 export const formatCurrency = (
   amount: number,
   currencyCode: string = 'MXN'
@@ -10,7 +11,7 @@ export const formatCurrency = (
   const currency = CURRENCIES.find((c) => c.code === currencyCode);
   const symbol = currency?.symbol || '$';
 
-  const formatted = new Intl.NumberFormat('es-MX', {
+  const formatted = new Intl.NumberFormat('en-US', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(Math.abs(amount));
