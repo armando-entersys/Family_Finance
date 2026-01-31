@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { formatCurrency, formatPercentage } from '@/utils/format';
 import { useGoals, useCreateGoal, useUpdateGoal, useDeleteGoal, useAddContribution } from '@/hooks/useGoals';
 import { showSuccess, showError } from '@/utils/feedback';
+import { DateInput } from '@/components/common/DateInput';
 import type { Goal } from '@/services/goals';
 
 const GOAL_ICONS = [
@@ -413,13 +414,14 @@ export default function GoalsScreen() {
               onChangeText={setEditGoalAmount}
             />
 
-            <Text className="text-gray-600 mb-2">Fecha limite (opcional)</Text>
-            <TextInput
-              className="bg-gray-100 rounded-xl px-4 py-3 text-gray-900 mb-4"
-              placeholder="AAAA-MM-DD"
+            <DateInput
+              label="Fecha limite (opcional)"
               value={editGoalDeadline}
-              onChangeText={setEditGoalDeadline}
+              onChange={setEditGoalDeadline}
+              placeholder="Seleccionar fecha limite"
+              minDate={new Date()}
             />
+            <View className="mb-4" />
 
             <Text className="text-gray-600 mb-2">Icono</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-6">

@@ -18,6 +18,7 @@ import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, RECEIPT_CATEGORY_MAP } from '@/c
 import { useCreateTransaction } from '@/hooks/useTransactions';
 import { scanReceipt } from '@/services/receiptScanner';
 import { showSuccess, showError, showFeedback } from '@/utils/feedback';
+import { DateInput } from '@/components/common/DateInput';
 import type { TransactionType, ParsedReceipt } from '@/types';
 
 const TRANSACTION_TYPES: { label: string; value: TransactionType; color: string }[] = [
@@ -258,13 +259,14 @@ export default function AddExpenseScreen() {
           />
 
           {/* Date */}
-          <Input
-            label="Fecha"
-            value={date}
-            onChangeText={setDate}
-            placeholder="YYYY-MM-DD"
-            className="mb-4"
-          />
+          <View className="mb-4">
+            <DateInput
+              label="Fecha"
+              value={date}
+              onChange={setDate}
+              placeholder="Seleccionar fecha"
+            />
+          </View>
 
           {/* Category Selection */}
           <View className="mb-6">

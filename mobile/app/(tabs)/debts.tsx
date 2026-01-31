@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { formatCurrency, formatPercentage } from '@/utils/format';
 import { useDebts, useDebtSummary, useCreateDebt, useUpdateDebt, useAddPayment } from '@/hooks/useDebts';
 import { showSuccess, showError, showFeedback } from '@/utils/feedback';
+import { DateInput } from '@/components/common/DateInput';
 import type { Debt, CreateDebtData } from '@/services/debts';
 
 const DEBT_TYPES = [
@@ -485,13 +486,13 @@ export default function DebtsScreen() {
               onChangeText={setEditInterestRate}
             />
 
-            <Text className="text-gray-600 mb-2">Fecha de vencimiento (opcional)</Text>
-            <TextInput
-              className="bg-gray-100 rounded-xl px-4 py-3 text-gray-900 mb-4"
-              placeholder="AAAA-MM-DD"
+            <DateInput
+              label="Fecha de vencimiento (opcional)"
               value={editDueDate}
-              onChangeText={setEditDueDate}
+              onChange={setEditDueDate}
+              placeholder="Seleccionar fecha"
             />
+            <View className="mb-4" />
 
             <Text className="text-gray-600 mb-2">Tipo de deuda</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-6">

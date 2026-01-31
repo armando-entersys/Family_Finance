@@ -20,6 +20,7 @@ import {
   formatTransactionType,
   getTransactionTypeColor,
 } from '@/utils/format';
+import { DateInput } from '@/components/common/DateInput';
 import type { TransactionType } from '@/types';
 
 const TRANSACTION_TYPES: { label: string; value: TransactionType; color: string }[] = [
@@ -345,13 +346,13 @@ export default function TransactionDetailScreen() {
               />
 
               {/* Date */}
-              <Text className="text-gray-600 mb-2">Fecha</Text>
-              <TextInput
+              <DateInput
+                label="Fecha"
                 value={editDate}
-                onChangeText={setEditDate}
-                placeholder="YYYY-MM-DD"
-                className="bg-gray-100 rounded-xl px-4 py-3 text-gray-900 mb-4"
+                onChange={setEditDate}
+                placeholder="Seleccionar fecha"
               />
+              <View className="mb-4" />
 
               {/* Category Selection */}
               <Text className="text-gray-600 mb-2">Categoria</Text>

@@ -26,6 +26,7 @@ import {
 } from '@/hooks/useCategoryBudgets';
 import { showSuccess, showError } from '@/utils/feedback';
 import { EXPENSE_CATEGORIES, FREQUENCIES, BUDGET_PERIODS } from '@/constants';
+import { DateInput } from '@/components/common/DateInput';
 import type { RecurringExpense, FrequencyType } from '@/services/recurringExpenses';
 import type { CategoryBudgetStatus, BudgetPeriod } from '@/services/categoryBudgets';
 
@@ -555,13 +556,13 @@ export default function RecurringScreen() {
                 ))}
               </View>
 
-              <Text className="text-gray-600 mb-2">Proxima fecha (AAAA-MM-DD)</Text>
-              <TextInput
-                className="bg-gray-100 rounded-xl px-4 py-3 text-gray-900 mb-4"
-                placeholder="2026-02-01"
+              <DateInput
+                label="Proxima fecha"
                 value={expenseNextDate}
-                onChangeText={setExpenseNextDate}
+                onChange={setExpenseNextDate}
+                placeholder="Seleccionar fecha"
               />
+              <View className="mb-4" />
 
               <TouchableOpacity
                 className={`flex-row items-center justify-between p-4 rounded-xl mb-6 ${
