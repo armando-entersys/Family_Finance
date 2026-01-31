@@ -8,6 +8,8 @@ from .family import Family
 from .transaction import Transaction, Category
 from .debt import Debt, DebtPayment
 from .goal import Goal, GoalContribution
+from .recurring_expense import RecurringExpense
+from .category_budget import CategoryBudget
 
 __all__ = [
     "Base",
@@ -20,4 +22,6 @@ __all__ = [
     "DebtPayment",
     "Goal",
     "GoalContribution",
+    "RecurringExpense",
+    "CategoryBudget",
 ]

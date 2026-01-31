@@ -27,6 +27,17 @@ export const API_ENDPOINTS = {
   DEBT_PAYMENTS: (id: string) => `/api/v1/debts/${id}/payments`,
   DEBT_ADJUSTMENTS: (id: string) => `/api/v1/debts/${id}/adjustments`,
 
+  // Recurring Expenses
+  RECURRING_EXPENSES: '/api/v1/recurring-expenses',
+  RECURRING_EXPENSES_DUE: '/api/v1/recurring-expenses/due',
+  RECURRING_EXPENSE: (id: string) => `/api/v1/recurring-expenses/${id}`,
+  RECURRING_EXPENSE_EXECUTE: (id: string) => `/api/v1/recurring-expenses/${id}/execute`,
+
+  // Category Budgets
+  CATEGORY_BUDGETS: '/api/v1/category-budgets',
+  CATEGORY_BUDGETS_STATUS: '/api/v1/category-budgets/status',
+  CATEGORY_BUDGET: (id: string) => `/api/v1/category-budgets/${id}`,
+
   // Stats
   STATS_SUMMARY: '/api/v1/stats/summary',
   STATS_DASHBOARD: '/api/v1/stats/dashboard',
@@ -86,6 +97,20 @@ export const CURRENCIES = [
   { code: 'EUR', symbol: '\u20AC', name: 'Euro' },
 ] as const;
 
+// Frequency configuration for recurring expenses
+export const FREQUENCIES = [
+  { id: 'DAILY', name: 'Diario' },
+  { id: 'WEEKLY', name: 'Semanal' },
+  { id: 'BIWEEKLY', name: 'Quincenal' },
+  { id: 'MONTHLY', name: 'Mensual' },
+] as const;
+
+// Budget period configuration
+export const BUDGET_PERIODS = [
+  { id: 'WEEKLY', name: 'Semanal' },
+  { id: 'MONTHLY', name: 'Mensual' },
+] as const;
+
 // Image optimization settings
 export const IMAGE_CONFIG = {
   MAX_WIDTH: 1024,
@@ -134,6 +159,10 @@ export const QUERY_KEYS = {
   GOAL: (id: string) => ['goal', id],
   DEBTS: ['debts'],
   DEBT: (id: string) => ['debt', id],
+  RECURRING_EXPENSES: ['recurring-expenses'],
+  RECURRING_EXPENSE: (id: string) => ['recurring-expense', id],
+  CATEGORY_BUDGETS: ['category-budgets'],
+  CATEGORY_BUDGET: (id: string) => ['category-budget', id],
   DASHBOARD: ['dashboard'],
   STATS: ['stats'],
   SETTINGS_USER: ['settings', 'user'],

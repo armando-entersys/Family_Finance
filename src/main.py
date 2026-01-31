@@ -25,6 +25,8 @@ from src.api.v1.endpoints.stats import router as stats_router
 from src.api.v1.endpoints.goals import router as goals_router
 from src.api.v1.endpoints.debts import router as debts_router
 from src.api.v1.endpoints.settings import router as settings_router
+from src.api.v1.endpoints.recurring_expenses import router as recurring_expenses_router
+from src.api.v1.endpoints.category_budgets import router as category_budgets_router
 from src.api.v1.endpoints.health import router as health_router, set_startup_time
 from src.api.v1.endpoints.metrics import router as metrics_router, MetricsMiddleware
 
@@ -117,6 +119,8 @@ def register_routes(app: FastAPI) -> None:
     app.include_router(goals_router, prefix="/api/v1")
     app.include_router(debts_router, prefix="/api/v1")
     app.include_router(settings_router, prefix="/api/v1")
+    app.include_router(recurring_expenses_router, prefix="/api/v1")
+    app.include_router(category_budgets_router, prefix="/api/v1")
 
 
 # Create application instance

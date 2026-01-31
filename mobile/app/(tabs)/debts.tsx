@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { formatCurrency, formatPercentage } from '@/utils/format';
-import { useDebts, useDebtSummary, useCreateDebt, useAddPayment } from '@/hooks/useDebts';
+import { useDebts, useDebtSummary, useCreateDebt, useUpdateDebt, useAddPayment } from '@/hooks/useDebts';
 import { showSuccess, showError, showFeedback } from '@/utils/feedback';
 import type { Debt, CreateDebtData } from '@/services/debts';
 
@@ -31,16 +31,26 @@ export default function DebtsScreen() {
   const { data: debts, isLoading, refetch, isRefetching } = useDebts();
   const { data: summary } = useDebtSummary();
   const createDebtMutation = useCreateDebt();
+  const updateDebtMutation = useUpdateDebt();
   const addPaymentMutation = useAddPayment();
 
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showArchiveModal, setShowArchiveModal] = useState(false);
   const [selectedDebt, setSelectedDebt] = useState<Debt | null>(null);
 
   // Create debt form state
   const [newCreditor, setNewCreditor] = useState('');
   const [newAmount, setNewAmount] = useState('');
   const [newDebtType, setNewDebtType] = useState<CreateDebtData['debt_type']>('credit_card');
+
+  // Edit debt form state
+  const [editCreditor, setEditCreditor] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editDebtType, setEditDebtType] = useState<CreateDebtData['debt_type']>('credit_card');
+  const [editInterestRate, setEditInterestRate] = useState('');
+  const [editDueDate, setEditDueDate] = useState('');
 
   // Payment form state
   const [paymentAmount, setPaymentAmount] = useState('');
@@ -66,6 +76,64 @@ export default function DebtsScreen() {
       showSuccess('Deuda registrada correctamente');
     } catch (error) {
       showError('No se pudo crear la deuda. Intenta de nuevo.');
+    }
+  };
+
+  const openEditModal = (debt: Debt) => {
+    setSelectedDebt(debt);
+    setEditCreditor(debt.creditor);
+    setEditDescription(debt.description || '');
+    setEditDebtType(debt.debt_type as CreateDebtData['debt_type']);
+    setEditInterestRate(debt.interest_rate?.toString() || '');
+    setEditDueDate(debt.due_date ? debt.due_date.split('T')[0] : '');
+    setShowEditModal(true);
+  };
+
+  const handleUpdateDebt = async () => {
+    if (!selectedDebt) return;
+
+    if (!editCreditor.trim()) {
+      showError('Ingresa el nombre del acreedor');
+      return;
+    }
+
+    try {
+      await updateDebtMutation.mutateAsync({
+        debtId: selectedDebt.id,
+        data: {
+          creditor: editCreditor.trim(),
+          description: editDescription.trim() || undefined,
+          debt_type: editDebtType,
+          interest_rate: editInterestRate ? parseFloat(editInterestRate) : undefined,
+          due_date: editDueDate ? new Date(editDueDate).toISOString() : undefined,
+        },
+      });
+      setShowEditModal(false);
+      setSelectedDebt(null);
+      showSuccess('Deuda actualizada correctamente');
+    } catch (error) {
+      showError('No se pudo actualizar la deuda. Intenta de nuevo.');
+    }
+  };
+
+  const openArchiveModal = (debt: Debt) => {
+    setSelectedDebt(debt);
+    setShowArchiveModal(true);
+  };
+
+  const handleArchiveDebt = async () => {
+    if (!selectedDebt) return;
+
+    try {
+      await updateDebtMutation.mutateAsync({
+        debtId: selectedDebt.id,
+        data: { is_archived: true },
+      });
+      setShowArchiveModal(false);
+      setSelectedDebt(null);
+      showSuccess('Deuda archivada correctamente');
+    } catch (error) {
+      showError('No se pudo archivar la deuda. Intenta de nuevo.');
     }
   };
 
@@ -185,6 +253,23 @@ export default function DebtsScreen() {
                     </Text>
                     <Text className="text-gray-400 text-sm">{typeInfo.name}</Text>
                   </View>
+                  {/* Edit and Archive Buttons */}
+                  {!isPaidOff && (
+                    <View className="flex-row gap-2">
+                      <TouchableOpacity
+                        className="w-9 h-9 bg-gray-100 rounded-full items-center justify-center"
+                        onPress={() => openEditModal(debt)}
+                      >
+                        <Ionicons name="pencil" size={18} color="#6B7280" />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        className="w-9 h-9 bg-amber-50 rounded-full items-center justify-center"
+                        onPress={() => openArchiveModal(debt)}
+                      >
+                        <Ionicons name="archive" size={18} color="#F59E0B" />
+                      </TouchableOpacity>
+                    </View>
+                  )}
                   {isPaidOff && (
                     <View className="bg-green-100 px-2 py-1 rounded-full">
                       <Text className="text-green-600 text-xs font-semibold">Pagada</Text>
@@ -207,6 +292,32 @@ export default function DebtsScreen() {
                     </Text>
                   </View>
                 </View>
+
+                {/* Interest Rate and Due Date */}
+                {(debt.interest_rate || debt.due_date) && (
+                  <View className="mt-2 flex-row gap-4">
+                    {debt.interest_rate && (
+                      <View className="flex-row items-center">
+                        <Ionicons name="trending-up" size={14} color="#6B7280" />
+                        <Text className="text-gray-500 text-xs ml-1">
+                          {debt.interest_rate}% anual
+                        </Text>
+                      </View>
+                    )}
+                    {debt.due_date && (
+                      <View className="flex-row items-center">
+                        <Ionicons name="calendar" size={14} color="#6B7280" />
+                        <Text className="text-gray-500 text-xs ml-1">
+                          Vence: {new Date(debt.due_date).toLocaleDateString('es-MX', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                          })}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                )}
 
                 {/* Progress Bar */}
                 <View className="mt-3">
@@ -331,6 +442,139 @@ export default function DebtsScreen() {
                 <Text className="text-white font-semibold text-lg">Registrar Deuda</Text>
               )}
             </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Edit Debt Modal */}
+      <Modal visible={showEditModal} animationType="slide" transparent>
+        <View className="flex-1 bg-black/50 justify-end">
+          <View className="bg-white rounded-t-3xl p-6 pb-10">
+            <View className="flex-row items-center justify-between mb-6">
+              <Text className="text-xl font-bold text-gray-900">Editar Deuda</Text>
+              <TouchableOpacity onPress={() => {
+                setShowEditModal(false);
+                setSelectedDebt(null);
+              }}>
+                <Ionicons name="close" size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+
+            <Text className="text-gray-600 mb-2">Acreedor / Institucion</Text>
+            <TextInput
+              className="bg-gray-100 rounded-xl px-4 py-3 text-gray-900 mb-4"
+              placeholder="Ej: BBVA, Banco Azteca"
+              value={editCreditor}
+              onChangeText={setEditCreditor}
+            />
+
+            <Text className="text-gray-600 mb-2">Descripcion (opcional)</Text>
+            <TextInput
+              className="bg-gray-100 rounded-xl px-4 py-3 text-gray-900 mb-4"
+              placeholder="Descripcion de la deuda"
+              value={editDescription}
+              onChangeText={setEditDescription}
+            />
+
+            <Text className="text-gray-600 mb-2">Tasa de interes anual % (opcional)</Text>
+            <TextInput
+              className="bg-gray-100 rounded-xl px-4 py-3 text-gray-900 mb-4"
+              placeholder="12.5"
+              keyboardType="numeric"
+              value={editInterestRate}
+              onChangeText={setEditInterestRate}
+            />
+
+            <Text className="text-gray-600 mb-2">Fecha de vencimiento (opcional)</Text>
+            <TextInput
+              className="bg-gray-100 rounded-xl px-4 py-3 text-gray-900 mb-4"
+              placeholder="AAAA-MM-DD"
+              value={editDueDate}
+              onChangeText={setEditDueDate}
+            />
+
+            <Text className="text-gray-600 mb-2">Tipo de deuda</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-6">
+              <View className="flex-row gap-2">
+                {DEBT_TYPES.map((type) => (
+                  <TouchableOpacity
+                    key={type.id}
+                    className={`px-4 py-3 rounded-xl flex-row items-center ${
+                      editDebtType === type.id ? 'bg-red-500' : 'bg-gray-100'
+                    }`}
+                    onPress={() => setEditDebtType(type.id)}
+                  >
+                    <Ionicons
+                      name={type.icon as keyof typeof Ionicons.glyphMap}
+                      size={18}
+                      color={editDebtType === type.id ? 'white' : '#6B7280'}
+                    />
+                    <Text
+                      className={`ml-2 font-medium ${
+                        editDebtType === type.id ? 'text-white' : 'text-gray-600'
+                      }`}
+                    >
+                      {type.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+
+            <TouchableOpacity
+              className="bg-red-500 py-4 rounded-xl items-center"
+              onPress={handleUpdateDebt}
+              disabled={updateDebtMutation.isPending}
+            >
+              {updateDebtMutation.isPending ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <Text className="text-white font-semibold text-lg">Guardar Cambios</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Archive Confirmation Modal */}
+      <Modal visible={showArchiveModal} animationType="fade" transparent>
+        <View className="flex-1 bg-black/50 items-center justify-center px-6">
+          <View className="bg-white rounded-2xl p-6 w-full">
+            <View className="items-center mb-4">
+              <View className="w-16 h-16 bg-amber-100 rounded-full items-center justify-center mb-4">
+                <Ionicons name="archive" size={32} color="#F59E0B" />
+              </View>
+              <Text className="text-xl font-bold text-gray-900 text-center">
+                Archivar Deuda
+              </Text>
+              <Text className="text-gray-500 text-center mt-2">
+                ¿Estas seguro de archivar la deuda con "{selectedDebt?.creditor}"?
+                La deuda no aparecera en la lista activa.
+              </Text>
+            </View>
+
+            <View className="flex-row gap-3 mt-4">
+              <TouchableOpacity
+                className="flex-1 py-3 bg-gray-100 rounded-xl items-center"
+                onPress={() => {
+                  setShowArchiveModal(false);
+                  setSelectedDebt(null);
+                }}
+              >
+                <Text className="text-gray-700 font-semibold">Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className="flex-1 py-3 bg-amber-500 rounded-xl items-center"
+                onPress={handleArchiveDebt}
+                disabled={updateDebtMutation.isPending}
+              >
+                {updateDebtMutation.isPending ? (
+                  <ActivityIndicator color="white" />
+                ) : (
+                  <Text className="text-white font-semibold">Archivar</Text>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>

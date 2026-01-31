@@ -45,6 +45,18 @@ from .user_settings import (
     FamilyInvite,
     FamilyMemberResponse,
 )
+from .recurring_expense import (
+    RecurringExpenseCreate,
+    RecurringExpenseUpdate,
+    RecurringExpenseResponse,
+    RecurringExpenseExecute,
+)
+from .category_budget import (
+    CategoryBudgetCreate,
+    CategoryBudgetUpdate,
+    CategoryBudgetResponse,
+    CategoryBudgetStatus,
+)
 
 __all__ = [
     # Auth
@@ -85,4 +97,14 @@ __all__ = [
     "FamilyNameUpdate",
     "FamilyInvite",
     "FamilyMemberResponse",
+    # Recurring Expenses
+    "RecurringExpenseCreate",
+    "RecurringExpenseUpdate",
+    "RecurringExpenseResponse",
+    "RecurringExpenseExecute",
+    # Category Budgets
+    "CategoryBudgetCreate",
+    "CategoryBudgetUpdate",
+    "CategoryBudgetResponse",
+    "CategoryBudgetStatus",
 ]

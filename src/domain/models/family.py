@@ -16,6 +16,8 @@ if TYPE_CHECKING:
     from .transaction import Transaction
     from .debt import Debt
     from .goal import Goal
+    from .recurring_expense import RecurringExpense
+    from .category_budget import CategoryBudget
 
 
 class Family(Base, TimestampMixin):
@@ -63,6 +65,16 @@ class Family(Base, TimestampMixin):
     )
     goals: Mapped[List["Goal"]] = relationship(
         "Goal",
+        back_populates="family",
+        lazy="selectin",
+    )
+    recurring_expenses: Mapped[List["RecurringExpense"]] = relationship(
+        "RecurringExpense",
+        back_populates="family",
+        lazy="selectin",
+    )
+    category_budgets: Mapped[List["CategoryBudget"]] = relationship(
+        "CategoryBudget",
         back_populates="family",
         lazy="selectin",
     )

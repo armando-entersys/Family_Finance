@@ -67,6 +67,15 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="recurring"
+        options={{
+          title: 'Recurrentes',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="repeat-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: 'Perfil',
