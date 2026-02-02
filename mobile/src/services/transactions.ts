@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import api from './api';
 import { API_ENDPOINTS } from '@/constants';
 import type {
@@ -69,16 +70,23 @@ export const uploadAttachment = async (
   mimeType: string = 'image/jpeg'
 ): Promise<Transaction> => {
   const formData = new FormData();
-
-  // Create file object for React Native
   const filename = `receipt_${Date.now()}.jpg`;
-  formData.append('file', {
-    uri: imageUri,
-    type: mimeType,
-    name: filename,
-  } as unknown as Blob);
 
-  const response = await api.post<Transaction>(
+  if (Platform.OS === 'web') {
+    // For web: fetch the image and create a proper Blob
+    const response = await fetch(imageUri);
+    const blob = await response.blob();
+    formData.append('file', blob, filename);
+  } else {
+    // For React Native (iOS/Android): use the URI object format
+    formData.append('file', {
+      uri: imageUri,
+      type: mimeType,
+      name: filename,
+    } as unknown as Blob);
+  }
+
+  const result = await api.post<Transaction>(
     API_ENDPOINTS.TRANSACTION_ATTACHMENT(transactionId),
     formData,
     {
@@ -88,5 +96,5 @@ export const uploadAttachment = async (
     }
   );
 
-  return response.data;
+  return result.data;
 };
