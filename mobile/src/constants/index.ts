@@ -138,10 +138,16 @@ export const GEMINI_CONFIG = {
       "unit_price": number,
       "total": number
     }
-  ]
+  ],
+  "invoice_data": {
+    "rfc": "string - RFC del negocio (Mexican tax ID, format: AAA000000XXX), null if not found",
+    "business_legal_name": "string - Razon social del negocio, null if not found",
+    "business_address": "string - Direccion fiscal del negocio, null if not found",
+    "folio": "string - Numero de ticket/folio, null if not found"
+  }
 }
 
-If you cannot read a field clearly, use null. For currency, default to MXN if unclear.`,
+If you cannot read a field clearly, use null. For currency, default to MXN if unclear. Look carefully for RFC, razon social, and address information which is typically at the top or bottom of Mexican receipts.`,
 };
 
 // Secure Storage Keys

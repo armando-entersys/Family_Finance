@@ -129,6 +129,7 @@ export const parseReceiptWithGemini = async (base64Image: string): Promise<Parse
       date: parsed.date || new Date().toISOString().split('T')[0],
       category: parsed.category || 'Other',
       line_items: Array.isArray(parsed.line_items) ? parsed.line_items : [],
+      invoice_data: parsed.invoice_data || null,
     };
   } catch (parseError) {
     console.error('Failed to parse Gemini response:', jsonString);

@@ -195,6 +195,13 @@ export interface ReceiptLineItem {
   total?: number;
 }
 
+export interface InvoiceData {
+  rfc: string | null;
+  business_legal_name: string | null;
+  business_address: string | null;
+  folio: string | null;
+}
+
 export interface ParsedReceipt {
   merchant_name: string;
   total_amount: number;
@@ -202,6 +209,7 @@ export interface ParsedReceipt {
   date: string;
   category: ReceiptCategory;
   line_items: ReceiptLineItem[];
+  invoice_data?: InvoiceData;
 }
 
 export type ReceiptCategory =

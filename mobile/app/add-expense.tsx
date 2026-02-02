@@ -15,12 +15,12 @@ import * as ImagePicker from 'expo-image-picker';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, RECEIPT_CATEGORY_MAP } from '@/constants';
-import { useCreateTransaction } from '@/hooks/useTransactions';
+import { useCreateTransaction, useUploadAttachment } from '@/hooks/useTransactions';
 import { scanReceipt } from '@/services/receiptScanner';
-import { showSuccess, showError, showFeedback } from '@/utils/feedback';
+import { showSuccess, showError } from '@/utils/feedback';
 import { DateInput } from '@/components/common/DateInput';
 import { CurrencyInput } from '@/components/common/CurrencyInput';
-import type { TransactionType, ParsedReceipt } from '@/types';
+import type { TransactionType, InvoiceData } from '@/types';
 
 const TRANSACTION_TYPES: { label: string; value: TransactionType; color: string }[] = [
   { label: 'Gasto', value: 'EXPENSE', color: '#EF4444' },
@@ -35,8 +35,11 @@ export default function AddExpenseScreen() {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [isInvoiced, setIsInvoiced] = useState(false);
+  const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
 
   const createTransaction = useCreateTransaction();
+  const uploadAttachment = useUploadAttachment();
 
   // Get categories based on transaction type
   const currentCategories = type === 'INCOME' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
@@ -109,6 +112,15 @@ export default function AddExpenseScreen() {
         setDate(receipt.date);
       }
 
+      // Store invoice data if found
+      if (receipt.invoice_data) {
+        setInvoiceData(receipt.invoice_data);
+        // Auto-enable invoice if RFC was found
+        if (receipt.invoice_data.rfc) {
+          setIsInvoiced(true);
+        }
+      }
+
       showSuccess('Datos extraidos del recibo. Puedes modificarlos si es necesario.');
     } catch (error) {
       console.error('AI scan error:', error);
@@ -121,6 +133,7 @@ export default function AddExpenseScreen() {
   // Remove image
   const removeImage = () => {
     setImageUri(null);
+    setInvoiceData(null);
   };
 
   // Save transaction
@@ -131,13 +144,28 @@ export default function AddExpenseScreen() {
     }
 
     try {
-      await createTransaction.mutateAsync({
+      // Create the transaction
+      const transaction = await createTransaction.mutateAsync({
         amount_original: parseFloat(amount),
         type,
         category_id: categoryId,
         description: description || undefined,
         trx_date: new Date(date).toISOString(),
+        is_invoiced: isInvoiced,
       });
+
+      // Upload image if present and invoice is marked
+      if (imageUri && isInvoiced) {
+        try {
+          await uploadAttachment.mutateAsync({
+            transactionId: transaction.id,
+            imageUri,
+          });
+        } catch (uploadError) {
+          console.error('Upload error:', uploadError);
+          // Continue anyway, transaction was created
+        }
+      }
 
       showSuccess('Transaccion guardada correctamente', () => {
         router.back();
@@ -147,6 +175,8 @@ export default function AddExpenseScreen() {
       showError('No se pudo guardar la transaccion. Intenta de nuevo.');
     }
   };
+
+  const isSaving = createTransaction.isPending || uploadAttachment.isPending;
 
   return (
     <KeyboardAvoidingView
@@ -191,7 +221,7 @@ export default function AddExpenseScreen() {
           {/* Photo/Receipt Section */}
           <View className="mb-6">
             <Text className="text-sm font-medium text-gray-700 mb-2">
-              Recibo (Opcional)
+              Ticket / Recibo
             </Text>
             {imageUri ? (
               <View className="relative">
@@ -208,7 +238,8 @@ export default function AddExpenseScreen() {
                 </TouchableOpacity>
                 {isScanning && (
                   <View className="absolute inset-0 bg-black/50 rounded-xl items-center justify-center">
-                    <Text className="text-white font-medium">Analizando con IA...</Text>
+                    <ActivityIndicator color="white" />
+                    <Text className="text-white font-medium mt-2">Analizando con IA...</Text>
                   </View>
                 )}
               </View>
@@ -231,9 +262,98 @@ export default function AddExpenseScreen() {
               </View>
             )}
             <Text className="text-xs text-gray-400 mt-2 text-center">
-              La IA llenara el formulario automaticamente si subes un recibo
+              La IA llenara el formulario automaticamente
             </Text>
           </View>
+
+          {/* SAT Invoice Toggle */}
+          <TouchableOpacity
+            onPress={() => setIsInvoiced(!isInvoiced)}
+            className={`flex-row items-center justify-between p-4 rounded-xl mb-4 ${
+              isInvoiced ? 'bg-green-50 border border-green-200' : 'bg-gray-50 border border-gray-200'
+            }`}
+          >
+            <View className="flex-row items-center flex-1">
+              <Ionicons
+                name="receipt"
+                size={24}
+                color={isInvoiced ? '#10B981' : '#6B7280'}
+              />
+              <View className="ml-3 flex-1">
+                <Text className={`font-semibold ${isInvoiced ? 'text-green-700' : 'text-gray-700'}`}>
+                  Facturar ante SAT
+                </Text>
+                <Text className="text-xs text-gray-500">
+                  {isInvoiced ? 'Se guardara el ticket para solicitar factura' : 'Marcar si requieres factura fiscal'}
+                </Text>
+              </View>
+            </View>
+            <View
+              className={`w-12 h-7 rounded-full p-1 ${
+                isInvoiced ? 'bg-green-500' : 'bg-gray-300'
+              }`}
+            >
+              <View
+                className={`w-5 h-5 rounded-full bg-white ${
+                  isInvoiced ? 'ml-auto' : ''
+                }`}
+              />
+            </View>
+          </TouchableOpacity>
+
+          {/* Invoice Data (if available and invoice enabled) */}
+          {isInvoiced && invoiceData && (invoiceData.rfc || invoiceData.business_legal_name) && (
+            <View className="bg-blue-50 rounded-xl p-4 mb-4 border border-blue-100">
+              <View className="flex-row items-center mb-3">
+                <Ionicons name="information-circle" size={20} color="#3B82F6" />
+                <Text className="text-blue-700 font-semibold ml-2">
+                  Datos para facturacion (extraidos por IA)
+                </Text>
+              </View>
+
+              {invoiceData.rfc && (
+                <View className="mb-2">
+                  <Text className="text-xs text-blue-600 font-medium">RFC:</Text>
+                  <Text className="text-blue-900">{invoiceData.rfc}</Text>
+                </View>
+              )}
+
+              {invoiceData.business_legal_name && (
+                <View className="mb-2">
+                  <Text className="text-xs text-blue-600 font-medium">Razon Social:</Text>
+                  <Text className="text-blue-900">{invoiceData.business_legal_name}</Text>
+                </View>
+              )}
+
+              {invoiceData.business_address && (
+                <View className="mb-2">
+                  <Text className="text-xs text-blue-600 font-medium">Direccion:</Text>
+                  <Text className="text-blue-900">{invoiceData.business_address}</Text>
+                </View>
+              )}
+
+              {invoiceData.folio && (
+                <View>
+                  <Text className="text-xs text-blue-600 font-medium">Folio:</Text>
+                  <Text className="text-blue-900">{invoiceData.folio}</Text>
+                </View>
+              )}
+
+              <Text className="text-xs text-blue-500 mt-3 italic">
+                Usa estos datos para solicitar tu factura al establecimiento
+              </Text>
+            </View>
+          )}
+
+          {/* Warning if invoice marked but no image */}
+          {isInvoiced && !imageUri && (
+            <View className="bg-amber-50 rounded-xl p-3 mb-4 flex-row items-center border border-amber-200">
+              <Ionicons name="warning" size={20} color="#F59E0B" />
+              <Text className="text-amber-700 ml-2 flex-1 text-sm">
+                Agrega una foto del ticket para guardar el comprobante
+              </Text>
+            </View>
+          )}
 
           {/* Amount */}
           <CurrencyInput
@@ -299,9 +419,9 @@ export default function AddExpenseScreen() {
       {/* Save Button */}
       <View className="p-4 border-t border-gray-100">
         <Button
-          title="Guardar"
+          title={isSaving ? 'Guardando...' : 'Guardar'}
           onPress={handleSave}
-          loading={createTransaction.isPending}
+          loading={isSaving}
           className="w-full"
         />
       </View>
