@@ -459,13 +459,13 @@ export default function ReportsScreen() {
               <View className="flex-row justify-between items-center">
                 <Text className="text-gray-500">Total Deudas Activas</Text>
                 <Text className="text-2xl font-bold text-red-500">
-                  {debtsSummary ? formatCurrency(debtsSummary.total_debt) : '$0'}
+                  {debtsSummary ? formatCurrency(debtsSummary.total_balance_mxn) : '$0'}
                 </Text>
               </View>
               <View className="flex-row justify-between items-center mt-2">
-                <Text className="text-gray-500 text-sm">Pagado Total</Text>
-                <Text className="text-green-600 font-medium">
-                  {debtsSummary ? formatCurrency(debtsSummary.total_paid) : '$0'}
+                <Text className="text-gray-500 text-sm">Deudas</Text>
+                <Text className="text-gray-600 font-medium">
+                  {debtsSummary?.total_debts || 0}
                 </Text>
               </View>
             </View>
