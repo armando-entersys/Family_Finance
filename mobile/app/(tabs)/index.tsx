@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
   RefreshControl,
+  TextInput,
 } from 'react-native';
 import { Link, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,14 +19,21 @@ import { showSuccess, showError } from '@/utils/feedback';
 export default function HomeScreen() {
   const { user } = useAuthStore();
   const { data: dashboard, isLoading, refetch, isRefetching } = useDashboard();
-  const { data: transactionsData } = useTransactionsInfinite({ type: undefined });
+  const [searchQuery, setSearchQuery] = useState('');
+  const searchTrimmed = searchQuery.trim();
+  const { data: transactionsData } = useTransactionsInfinite({
+    type: undefined,
+    search: searchTrimmed || undefined,
+  });
   const deleteTransaction = useDeleteTransaction();
 
-  // Sort transactions by date descending and take the 5 most recent
-  const recentTransactions = (transactionsData?.pages[0]?.items || [])
-    .slice()
-    .sort((a, b) => new Date(b.trx_date).getTime() - new Date(a.trx_date).getTime())
-    .slice(0, 5);
+  // Sort transactions by date descending; show all results when searching, 5 most recent otherwise
+  const recentTransactions = useMemo(() => {
+    const items = (transactionsData?.pages[0]?.items || [])
+      .slice()
+      .sort((a, b) => new Date(b.trx_date).getTime() - new Date(a.trx_date).getTime());
+    return searchTrimmed ? items : items.slice(0, 5);
+  }, [transactionsData, searchTrimmed]);
 
   const handleDelete = async (id: string) => {
     try {
@@ -131,11 +139,30 @@ export default function HomeScreen() {
         </View>
       </View>
 
+      {/* Search Bar */}
+      <View className="mt-4 px-6">
+        <View className="flex-row items-center bg-white rounded-xl border border-gray-200 px-3">
+          <Ionicons name="search-outline" size={20} color="#9CA3AF" />
+          <TextInput
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Buscar transacciones..."
+            placeholderTextColor="#9CA3AF"
+            className="flex-1 py-3 px-2 text-gray-900"
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <Ionicons name="close-circle" size={20} color="#9CA3AF" />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
       {/* Recent Transactions */}
-      <View className="mt-6 px-6">
+      <View className="mt-4 px-6">
         <View className="flex-row items-center justify-between mb-3">
           <Text className="text-lg font-semibold text-gray-900">
-            Transacciones Recientes
+            {searchTrimmed ? 'Resultados de busqueda' : 'Transacciones Recientes'}
           </Text>
           <Link href="/(tabs)/transactions" asChild>
             <TouchableOpacity>
@@ -147,9 +174,11 @@ export default function HomeScreen() {
         <View className="bg-white rounded-2xl overflow-hidden shadow-sm">
           {recentTransactions.length === 0 ? (
             <View className="p-8 items-center">
-              <Ionicons name="receipt-outline" size={48} color="#D1D5DB" />
+              <Ionicons name={searchTrimmed ? "search-outline" : "receipt-outline"} size={48} color="#D1D5DB" />
               <Text className="text-gray-500 mt-2 text-center">
-                No hay transacciones aun.{'\n'}Escanea tu primer recibo!
+                {searchTrimmed
+                  ? `No se encontraron resultados para "${searchTrimmed}"`
+                  : 'No hay transacciones aun.\nEscanea tu primer recibo!'}
               </Text>
             </View>
           ) : (

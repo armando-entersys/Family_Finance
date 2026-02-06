@@ -256,6 +256,7 @@ async def list_family_members(
         FamilyMemberResponse(
             id=str(m.id),
             email=m.email,
+            name=m.name,
             role=m.role,
             is_active=m.is_active,
         )
@@ -327,6 +328,7 @@ async def invite_family_member(
     return FamilyMemberResponse(
         id=str(new_user.id),
         email=new_user.email,
+        name=new_user.name,
         role=new_user.role,
         is_active=new_user.is_active,
     )

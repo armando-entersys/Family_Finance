@@ -19,6 +19,7 @@ export const useTransactionsInfinite = (filters?: {
   category_id?: number;
   date_from?: string;
   date_to?: string;
+  search?: string;
 }) => {
   return useInfiniteQuery({
     queryKey: [...QUERY_KEYS.TRANSACTIONS, filters],

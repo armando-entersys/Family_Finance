@@ -19,6 +19,7 @@ export interface FamilySettings {
 export interface FamilyMember {
   id: string;
   email: string;
+  name: string | null;
   role: 'ADMIN' | 'MEMBER';
   is_active: boolean;
 }

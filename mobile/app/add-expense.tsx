@@ -81,6 +81,7 @@ export default function AddExpenseScreen() {
       const result = await ImagePicker.launchCameraAsync({
         allowsEditing: true,
         quality: 0.8,
+        cameraType: ImagePicker.CameraType.back,
       });
 
       if (!result.canceled && result.assets[0]?.uri) {

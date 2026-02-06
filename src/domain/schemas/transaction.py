@@ -63,6 +63,7 @@ class TransactionResponse(BaseModel):
     is_invoiced: bool
     sync_id: uuid.UUID
     created_at: datetime
+    user_name: Optional[str] = None
 
     model_config = {"from_attributes": True}
 
@@ -87,3 +88,4 @@ class TransactionFilter(BaseModel):
     date_to: Optional[datetime] = None
     min_amount: Optional[Decimal] = None
     max_amount: Optional[Decimal] = None
+    search: Optional[str] = None

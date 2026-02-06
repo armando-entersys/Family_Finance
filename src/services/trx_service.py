@@ -9,6 +9,7 @@ import uuid
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from src.domain.models import Transaction
 from src.domain.schemas import TransactionCreate, TransactionFilter, TransactionUpdate
@@ -63,7 +64,9 @@ class TransactionService:
     ) -> Optional[Transaction]:
         """Get a transaction by ID, scoped to family."""
         result = await self.db.execute(
-            select(Transaction).where(
+            select(Transaction)
+            .options(selectinload(Transaction.user))
+            .where(
                 Transaction.id == transaction_id,
                 Transaction.family_id == family_id,
             )
@@ -111,7 +114,7 @@ class TransactionService:
         List transactions with filtering and pagination.
         Returns (transactions, total_count).
         """
-        query = select(Transaction).where(Transaction.family_id == family_id)
+        query = select(Transaction).options(selectinload(Transaction.user)).where(Transaction.family_id == family_id)
 
         # Apply filters
         if filters:
@@ -129,6 +132,8 @@ class TransactionService:
                 query = query.where(Transaction.amount_base >= filters.min_amount)
             if filters.max_amount:
                 query = query.where(Transaction.amount_base <= filters.max_amount)
+            if filters.search:
+                query = query.where(Transaction.description.ilike(f"%{filters.search}%"))
 
         # Get total count
         count_query = select(func.count()).select_from(query.subquery())

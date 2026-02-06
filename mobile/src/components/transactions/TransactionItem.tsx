@@ -60,6 +60,12 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
           <Text className="text-sm text-gray-500">
             {formatRelativeTime(transaction.trx_date)}
           </Text>
+          {transaction.user_name && (
+            <>
+              <View className="w-1 h-1 rounded-full bg-gray-400 mx-2" />
+              <Text className="text-sm text-gray-500">{transaction.user_name}</Text>
+            </>
+          )}
           {transaction.is_invoiced && (
             <>
               <View className="w-1 h-1 rounded-full bg-gray-400 mx-2" />

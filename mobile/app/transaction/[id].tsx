@@ -245,6 +245,20 @@ export default function TransactionDetailScreen() {
               </View>
             </View>
 
+            {transaction.user_name && (
+              <View className="flex-row items-center px-4 py-3.5 border-b border-gray-100">
+                <View className="w-9 h-9 bg-gray-100 rounded-full items-center justify-center mr-3">
+                  <Ionicons name="person-outline" size={20} color="#6B7280" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-sm text-gray-500">Registrado por</Text>
+                  <Text className="text-gray-900 font-medium">
+                    {transaction.user_name}
+                  </Text>
+                </View>
+              </View>
+            )}
+
             <View className="flex-row items-center px-4 py-3.5">
               <View
                 className="w-9 h-9 rounded-full items-center justify-center mr-3"

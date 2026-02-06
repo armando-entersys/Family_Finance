@@ -36,6 +36,7 @@ export interface Transaction {
   is_invoiced: boolean;
   sync_id: string | null;
   created_at: string;
+  user_name: string | null;
 }
 
 export type TransactionType = 'INCOME' | 'EXPENSE' | 'DEBT' | 'SAVING';
@@ -180,6 +181,7 @@ export interface FamilySettings {
 export interface FamilyMember {
   id: string;
   email: string;
+  name: string | null;
   role: 'ADMIN' | 'MEMBER';
   is_active: boolean;
 }

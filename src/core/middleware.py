@@ -35,6 +35,12 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "magnetometer=(), microphone=(), payment=(), usb=()"
         )
 
+        # Prevent browser caching for API responses
+        if request.url.path.startswith("/api/"):
+            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+
         # Remove server header (MutableHeaders doesn't support pop)
         if "server" in response.headers:
             del response.headers["server"]

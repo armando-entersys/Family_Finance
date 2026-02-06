@@ -146,6 +146,12 @@ class Transaction(Base):
         Index("ix_transactions_type", "type"),
     )
 
+    @property
+    def user_name(self) -> Optional[str]:
+        if self.user:
+            return self.user.name or self.user.email.split('@')[0]
+        return None
+
     def __repr__(self) -> str:
         return f"<Transaction(id={self.id}, type={self.type}, amount={self.amount_base})>"
 

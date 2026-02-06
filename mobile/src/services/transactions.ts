@@ -16,6 +16,7 @@ export interface TransactionFilters {
   category_id?: number;
   date_from?: string;
   date_to?: string;
+  search?: string;
 }
 
 // List transactions with pagination and filters
@@ -30,6 +31,7 @@ export const getTransactions = async (
   if (filters.category_id) params.append('category_id', filters.category_id.toString());
   if (filters.date_from) params.append('date_from', filters.date_from);
   if (filters.date_to) params.append('date_to', filters.date_to);
+  if (filters.search) params.append('search', filters.search);
 
   const response = await api.get<PaginatedResponse<Transaction>>(
     `${API_ENDPOINTS.TRANSACTIONS}?${params.toString()}`

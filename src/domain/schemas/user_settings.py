@@ -65,5 +65,6 @@ class FamilyMemberResponse(BaseModel):
 
     id: str
     email: str
+    name: Optional[str] = None
     role: str
     is_active: bool
