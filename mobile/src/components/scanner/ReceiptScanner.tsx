@@ -87,6 +87,22 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
     }
   };
 
+  // On web, use HTML5 input with capture="environment" for back camera
+  const handleWebCapture = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.setAttribute('capture', 'environment');
+    input.onchange = (e: any) => {
+      const file = e.target?.files?.[0];
+      if (file) {
+        const uri = URL.createObjectURL(file);
+        onCapture(uri);
+      }
+    };
+    input.click();
+  };
+
   // Pick from gallery
   const handlePickFromGallery = async () => {
     try {
@@ -156,7 +172,7 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
 
               {/* Capture Button */}
               <TouchableOpacity
-                onPress={handleCapture}
+                onPress={Platform.OS === 'web' ? handleWebCapture : handleCapture}
                 disabled={isCapturing}
                 className="w-20 h-20 rounded-full bg-white items-center justify-center"
               >

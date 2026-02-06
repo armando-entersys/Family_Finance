@@ -8,7 +8,8 @@ export const formatCurrency = (
   amount: number,
   currencyCode: string = 'MXN'
 ): string => {
-  const safeAmount = typeof amount === 'number' && !isNaN(amount) ? amount : 0;
+  const parsed = Number(amount);
+  const safeAmount = isNaN(parsed) ? 0 : parsed;
   const currency = CURRENCIES.find((c) => c.code === currencyCode);
   const symbol = currency?.symbol || '$';
 
@@ -89,6 +90,7 @@ export const truncate = (text: string, maxLength: number): string => {
 
 // Format percentage
 export const formatPercentage = (value: number, decimals: number = 1): string => {
-  const safeValue = typeof value === 'number' && !isNaN(value) ? value : 0;
+  const parsed = Number(value);
+  const safeValue = isNaN(parsed) ? 0 : parsed;
   return `${safeValue.toFixed(decimals)}%`;
 };
