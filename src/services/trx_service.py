@@ -2,7 +2,7 @@
 Transaction service - Business logic for financial operations.
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Optional, Tuple
 import uuid
@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from src.domain.models import Transaction
+from src.domain.models.user import User
 from src.domain.schemas import TransactionCreate, TransactionFilter, TransactionUpdate
 
 
@@ -154,6 +155,7 @@ class TransactionService:
         family_id: uuid.UUID,
         date_from: Optional[datetime] = None,
         date_to: Optional[datetime] = None,
+        category_id: Optional[int] = None,
     ) -> dict:
         """
         Get financial summary for a family.
@@ -168,6 +170,8 @@ class TransactionService:
             query = query.where(Transaction.trx_date >= date_from)
         if date_to:
             query = query.where(Transaction.trx_date <= date_to)
+        if category_id:
+            query = query.where(Transaction.category_id == category_id)
 
         query = query.group_by(Transaction.type)
 
@@ -187,6 +191,128 @@ class TransactionService:
         summary["balance"] = summary["INCOME"] - summary["EXPENSE"] - summary["SAVING"]
 
         return summary
+
+    async def get_member_summary(
+        self,
+        family_id: uuid.UUID,
+        date_from: Optional[datetime] = None,
+        date_to: Optional[datetime] = None,
+        category_id: Optional[int] = None,
+    ) -> list[dict]:
+        """
+        Get financial summary grouped by family member.
+        Returns list of {user_id, user_name, income, expense, balance, transaction_count}.
+        """
+        query = select(
+            Transaction.user_id,
+            User.name.label("user_name"),
+            Transaction.type,
+            func.sum(Transaction.amount_base).label("total"),
+            func.count(Transaction.id).label("count"),
+        ).join(
+            User, Transaction.user_id == User.id, isouter=True
+        ).where(
+            Transaction.family_id == family_id
+        )
+
+        if date_from:
+            query = query.where(Transaction.trx_date >= date_from)
+        if date_to:
+            query = query.where(Transaction.trx_date <= date_to)
+        if category_id:
+            query = query.where(Transaction.category_id == category_id)
+
+        query = query.group_by(Transaction.user_id, User.name, Transaction.type)
+
+        result = await self.db.execute(query)
+        rows = result.all()
+
+        # Aggregate by user
+        members: dict[uuid.UUID, dict] = {}
+        for row in rows:
+            uid = row.user_id
+            if uid not in members:
+                members[uid] = {
+                    "user_id": str(uid),
+                    "user_name": row.user_name or "Sin nombre",
+                    "income": Decimal("0"),
+                    "expense": Decimal("0"),
+                    "balance": Decimal("0"),
+                    "transaction_count": 0,
+                }
+            amount = row.total or Decimal("0")
+            members[uid]["transaction_count"] += row.count or 0
+            if row.type == "INCOME":
+                members[uid]["income"] += amount
+            elif row.type == "EXPENSE":
+                members[uid]["expense"] += amount
+
+        for m in members.values():
+            m["balance"] = m["income"] - m["expense"]
+
+        return list(members.values())
+
+    async def get_summary_with_comparison(
+        self,
+        family_id: uuid.UUID,
+        date_from: datetime,
+        date_to: datetime,
+        category_id: Optional[int] = None,
+    ) -> dict:
+        """
+        Get summary for current period and the previous period of the same duration.
+        Returns current summary, previous summary, and percentage changes.
+        """
+        # Current period
+        current = await self.get_summary(
+            family_id=family_id,
+            date_from=date_from,
+            date_to=date_to,
+            category_id=category_id,
+        )
+
+        # Calculate previous period (same duration)
+        duration = date_to - date_from
+        prev_to = date_from - timedelta(seconds=1)
+        prev_from = prev_to - duration
+
+        previous = await self.get_summary(
+            family_id=family_id,
+            date_from=prev_from,
+            date_to=prev_to,
+            category_id=category_id,
+        )
+
+        # Calculate percentage changes
+        prev_income = float(previous.get("INCOME", 0))
+        curr_income = float(current.get("INCOME", 0))
+        prev_expense = float(previous.get("EXPENSE", 0))
+        curr_expense = float(current.get("EXPENSE", 0))
+
+        income_change_pct = (
+            ((curr_income - prev_income) / prev_income * 100)
+            if prev_income > 0
+            else 0.0
+        )
+        expense_change_pct = (
+            ((curr_expense - prev_expense) / prev_expense * 100)
+            if prev_expense > 0
+            else 0.0
+        )
+
+        savings_rate = (
+            ((curr_income - curr_expense) / curr_income * 100)
+            if curr_income > 0
+            else 0.0
+        )
+
+        return {
+            "current": current,
+            "previous": previous,
+            "income_change_pct": round(income_change_pct, 1),
+            "expense_change_pct": round(expense_change_pct, 1),
+            "savings_rate": round(savings_rate, 1),
+        }
 
     async def update_attachment(
         self,

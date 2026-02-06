@@ -72,6 +72,24 @@ export default function AddExpenseScreen() {
   // Take photo with camera
   const takePhoto = async () => {
     try {
+      // On web, use HTML5 input with capture="environment" for back camera
+      if (Platform.OS === 'web') {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.setAttribute('capture', 'environment');
+        input.onchange = async (e: any) => {
+          const file = e.target?.files?.[0];
+          if (file) {
+            const uri = URL.createObjectURL(file);
+            setImageUri(uri);
+            await processImageWithAI(uri);
+          }
+        };
+        input.click();
+        return;
+      }
+
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== 'granted') {
         showError('Necesitamos acceso a la camara para tomar fotos');

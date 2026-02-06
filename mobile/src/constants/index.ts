@@ -42,6 +42,7 @@ export const API_ENDPOINTS = {
   // Stats
   STATS_SUMMARY: '/api/v1/stats/summary',
   STATS_DASHBOARD: '/api/v1/stats/dashboard',
+  STATS_REPORTS: '/api/v1/stats/reports',
 
   // Settings
   SETTINGS_USER: '/api/v1/settings/user',
@@ -172,6 +173,7 @@ export const QUERY_KEYS = {
   CATEGORY_BUDGET: (id: string) => ['category-budget', id],
   DASHBOARD: ['dashboard'],
   STATS: ['stats'],
+  REPORTS: ['reports'],
   SETTINGS_USER: ['settings', 'user'],
   SETTINGS_FAMILY: ['settings', 'family'],
   FAMILY_MEMBERS: ['family', 'members'],

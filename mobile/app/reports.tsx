@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,47 +9,71 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useDashboard } from '@/hooks/useDashboard';
-import { useTransactionsInfinite } from '@/hooks/useTransactions';
+import { useReports } from '@/hooks/useDashboard';
 import { useGoals } from '@/hooks/useGoals';
 import { useDebts, useDebtsSummary } from '@/hooks/useDebts';
 import { useRecurringExpenses } from '@/hooks/useRecurringExpenses';
 import { useCategoryBudgetsStatus } from '@/hooks/useCategoryBudgets';
 import { formatCurrency, formatPercentage } from '@/utils/format';
-import { CATEGORIES, EXPENSE_CATEGORIES } from '@/constants';
+import { EXPENSE_CATEGORIES } from '@/constants';
 
 type Period = 'week' | 'month' | 'year';
 
+const getDateRange = (period: Period) => {
+  const now = new Date();
+  let from: Date;
+
+  switch (period) {
+    case 'week': {
+      from = new Date(now);
+      from.setDate(from.getDate() - 7);
+      from.setHours(0, 0, 0, 0);
+      break;
+    }
+    case 'month': {
+      from = new Date(now.getFullYear(), now.getMonth(), 1);
+      break;
+    }
+    case 'year': {
+      from = new Date(now.getFullYear(), 0, 1);
+      break;
+    }
+  }
+
+  return {
+    date_from: from.toISOString(),
+    date_to: now.toISOString(),
+  };
+};
+
+const getSavingsRateStyle = (rate: number) => {
+  if (rate >= 20) return { color: '#10B981', bg: '#ECFDF5', label: 'Excelente' };
+  if (rate >= 10) return { color: '#F59E0B', bg: '#FFFBEB', label: 'Bien' };
+  if (rate >= 0) return { color: '#EF4444', bg: '#FEF2F2', label: 'Cuidado' };
+  return { color: '#991B1B', bg: '#FEF2F2', label: 'Critico' };
+};
+
 export default function ReportsScreen() {
   const [period, setPeriod] = useState<Period>('month');
-  const { data: dashboard, isLoading, refetch, isRefetching } = useDashboard();
-  const { data: transactionsData } = useTransactionsInfinite({ type: 'EXPENSE' });
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | undefined>(undefined);
+
+  const dateRange = useMemo(() => getDateRange(period), [period]);
+  const filters = useMemo(() => ({
+    ...dateRange,
+    category_id: selectedCategoryId,
+  }), [dateRange, selectedCategoryId]);
+
+  const { data: reports, isLoading, refetch, isRefetching } = useReports(filters);
   const { data: goals } = useGoals();
   const { data: debts } = useDebts();
   const { data: debtsSummary } = useDebtsSummary();
   const { data: recurringExpenses } = useRecurringExpenses();
   const { data: budgetStatuses } = useCategoryBudgetsStatus();
 
-  // Calculate category totals from transactions
-  const categoryTotals = React.useMemo(() => {
-    const totals: Record<number, number> = {};
-    const allTransactions = transactionsData?.pages.flatMap((p) => p.items) || [];
-
-    allTransactions.forEach((trx) => {
-      if (trx.category_id && trx.type === 'EXPENSE') {
-        totals[trx.category_id] = (totals[trx.category_id] || 0) + Number(trx.amount_base);
-      }
-    });
-
-    return CATEGORIES.map((cat) => ({
-      ...cat,
-      total: totals[cat.id] || 0,
-    }))
-      .filter((cat) => cat.total > 0)
-      .sort((a, b) => b.total - a.total);
-  }, [transactionsData]);
-
-  const totalExpenses = categoryTotals.reduce((sum, cat) => sum + cat.total, 0);
+  const savingsRate = reports?.comparison.savings_rate ?? 0;
+  const savingsStyle = getSavingsRateStyle(savingsRate);
+  const expenseChangePct = reports?.comparison.expense_change_pct ?? 0;
+  const expensesTrending = expenseChangePct > 0 ? 'up' : expenseChangePct < 0 ? 'down' : 'flat';
 
   if (isLoading) {
     return (
@@ -67,7 +91,7 @@ export default function ReportsScreen() {
         }
       >
         {/* Header */}
-        <View className="bg-white pt-14 pb-6 px-6 border-b border-gray-100">
+        <View className="bg-white pt-14 pb-4 px-6 border-b border-gray-100">
           <View className="flex-row items-center mb-4">
             <TouchableOpacity
               onPress={() => router.back()}
@@ -78,19 +102,19 @@ export default function ReportsScreen() {
             <Text className="text-2xl font-bold text-gray-900">Reportes</Text>
           </View>
 
-          {/* Period Selector */}
+          {/* Period Selector - FUNCTIONAL */}
           <View className="flex-row bg-gray-100 rounded-xl p-1">
             {[
-              { key: 'week', label: 'Semana' },
-              { key: 'month', label: 'Mes' },
-              { key: 'year', label: 'Ano' },
+              { key: 'week' as Period, label: 'Semana' },
+              { key: 'month' as Period, label: 'Mes' },
+              { key: 'year' as Period, label: 'Ano' },
             ].map((item) => (
               <TouchableOpacity
                 key={item.key}
                 className={`flex-1 py-2 rounded-lg ${
                   period === item.key ? 'bg-white shadow-sm' : ''
                 }`}
-                onPress={() => setPeriod(item.key as Period)}
+                onPress={() => setPeriod(item.key)}
               >
                 <Text
                   className={`text-center font-medium ${
@@ -102,12 +126,118 @@ export default function ReportsScreen() {
               </TouchableOpacity>
             ))}
           </View>
+
+          {/* Category Filter */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-3">
+            <View className="flex-row gap-2">
+              <TouchableOpacity
+                onPress={() => setSelectedCategoryId(undefined)}
+                className={`px-3 py-1.5 rounded-full ${
+                  !selectedCategoryId ? 'bg-primary-600' : 'bg-gray-100'
+                }`}
+              >
+                <Text className={`text-sm font-medium ${
+                  !selectedCategoryId ? 'text-white' : 'text-gray-600'
+                }`}>
+                  Todas
+                </Text>
+              </TouchableOpacity>
+              {EXPENSE_CATEGORIES.map((cat) => (
+                <TouchableOpacity
+                  key={cat.id}
+                  onPress={() => setSelectedCategoryId(
+                    selectedCategoryId === cat.id ? undefined : cat.id
+                  )}
+                  className={`px-3 py-1.5 rounded-full ${
+                    selectedCategoryId === cat.id ? 'bg-primary-600' : 'bg-gray-100'
+                  }`}
+                >
+                  <Text className={`text-sm font-medium ${
+                    selectedCategoryId === cat.id ? 'text-white' : 'text-gray-600'
+                  }`}>
+                    {cat.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
         </View>
 
-        {/* Summary Cards */}
-        <View className="p-6">
+        {/* HERO: Savings Rate - visible in first 3 seconds */}
+        <View className="p-6 pb-3">
+          <View
+            className="rounded-2xl p-5"
+            style={{ backgroundColor: savingsStyle.bg }}
+          >
+            <View className="flex-row items-center justify-between mb-2">
+              <Text className="text-gray-600 font-medium">Tasa de Ahorro</Text>
+              <View
+                className="px-3 py-1 rounded-full"
+                style={{ backgroundColor: savingsStyle.color + '20' }}
+              >
+                <Text className="text-sm font-bold" style={{ color: savingsStyle.color }}>
+                  {savingsStyle.label}
+                </Text>
+              </View>
+            </View>
+            <Text className="text-4xl font-bold" style={{ color: savingsStyle.color }}>
+              {formatPercentage(savingsRate)}
+            </Text>
+            <Text className="text-gray-500 text-sm mt-1">
+              (Ingreso - Gasto) / Ingreso
+            </Text>
+          </View>
+        </View>
+
+        {/* HERO: Expense Trend */}
+        <View className="px-6 pb-3">
+          <View className="bg-white rounded-2xl p-4 shadow-sm flex-row items-center">
+            <View
+              className="w-10 h-10 rounded-full items-center justify-center mr-3"
+              style={{
+                backgroundColor: expensesTrending === 'down' ? '#ECFDF5'
+                  : expensesTrending === 'up' ? '#FEF2F2' : '#F3F4F6',
+              }}
+            >
+              <Ionicons
+                name={expensesTrending === 'down' ? 'trending-down' : expensesTrending === 'up' ? 'trending-up' : 'remove'}
+                size={20}
+                color={expensesTrending === 'down' ? '#10B981' : expensesTrending === 'up' ? '#EF4444' : '#6B7280'}
+              />
+            </View>
+            <View className="flex-1">
+              <Text className="text-gray-500 text-sm">Tendencia de gastos</Text>
+              <Text
+                className="font-bold text-lg"
+                style={{
+                  color: expensesTrending === 'down' ? '#10B981'
+                    : expensesTrending === 'up' ? '#EF4444' : '#6B7280',
+                }}
+              >
+                {expenseChangePct === 0
+                  ? 'Sin cambio'
+                  : `${formatPercentage(Math.abs(expenseChangePct))} ${
+                      expensesTrending === 'down' ? 'menos' : 'mas'
+                    } que el periodo anterior`
+                }
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* HERO: Balance */}
+        <View className="px-6 pb-3">
+          <View className="bg-primary-600 rounded-2xl p-4">
+            <Text className="text-primary-200 text-sm">Balance del Periodo</Text>
+            <Text className="text-white text-3xl font-bold">
+              {formatCurrency(reports?.summary.balance ?? 0)}
+            </Text>
+          </View>
+        </View>
+
+        {/* Income / Expense Cards */}
+        <View className="px-6 pb-3">
           <View className="flex-row gap-3">
-            {/* Income */}
             <View className="flex-1 bg-white rounded-2xl p-4 shadow-sm">
               <View className="flex-row items-center mb-2">
                 <View className="w-8 h-8 bg-green-100 rounded-full items-center justify-center">
@@ -116,11 +246,10 @@ export default function ReportsScreen() {
               </View>
               <Text className="text-gray-500 text-sm">Ingresos</Text>
               <Text className="text-xl font-bold text-gray-900">
-                {dashboard ? formatCurrency(dashboard.summary.income) : '$0'}
+                {formatCurrency(reports?.summary.income ?? 0)}
               </Text>
             </View>
 
-            {/* Expenses */}
             <View className="flex-1 bg-white rounded-2xl p-4 shadow-sm">
               <View className="flex-row items-center mb-2">
                 <View className="w-8 h-8 bg-red-100 rounded-full items-center justify-center">
@@ -129,85 +258,85 @@ export default function ReportsScreen() {
               </View>
               <Text className="text-gray-500 text-sm">Gastos</Text>
               <Text className="text-xl font-bold text-gray-900">
-                {dashboard ? formatCurrency(dashboard.summary.expense) : '$0'}
+                {formatCurrency(reports?.summary.expense ?? 0)}
               </Text>
             </View>
-          </View>
-
-          {/* Balance */}
-          <View className="mt-3 bg-primary-600 rounded-2xl p-4">
-            <Text className="text-primary-200 text-sm">Balance</Text>
-            <Text className="text-white text-2xl font-bold">
-              {dashboard ? formatCurrency(dashboard.summary.balance) : '$0'}
-            </Text>
           </View>
         </View>
 
-        {/* Category Breakdown */}
-        <View className="px-6 pb-6">
-          <Text className="text-lg font-semibold text-gray-900 mb-4">
-            Gastos por Categoria
-          </Text>
+        {/* Member Breakdown */}
+        {reports?.members && reports.members.length > 0 && (
+          <View className="px-6 pb-6">
+            <Text className="text-lg font-semibold text-gray-900 mb-4">
+              Contribucion por Miembro
+            </Text>
 
-          {categoryTotals.length === 0 ? (
-            <View className="bg-white rounded-2xl p-8 items-center">
-              <Ionicons name="pie-chart-outline" size={48} color="#D1D5DB" />
-              <Text className="text-gray-500 mt-2 text-center">
-                No hay gastos registrados
-              </Text>
-            </View>
-          ) : (
             <View className="bg-white rounded-2xl overflow-hidden shadow-sm">
-              {categoryTotals.map((category, index) => {
-                const percentage = totalExpenses > 0 ? (category.total / totalExpenses) * 100 : 0;
+              {reports.members.map((member, index) => {
+                const totalIncome = reports.summary.income || 1;
+                const contributionPct = totalIncome > 0
+                  ? (Number(member.income) / Number(totalIncome)) * 100
+                  : 0;
 
                 return (
                   <View
-                    key={category.id}
+                    key={member.user_id}
                     className={`p-4 ${
-                      index < categoryTotals.length - 1 ? 'border-b border-gray-100' : ''
+                      index < reports.members.length - 1 ? 'border-b border-gray-100' : ''
                     }`}
                   >
                     <View className="flex-row items-center justify-between mb-2">
                       <View className="flex-row items-center">
-                        <View
-                          className="w-10 h-10 rounded-full items-center justify-center mr-3"
-                          style={{ backgroundColor: category.color + '20' }}
-                        >
-                          <Ionicons
-                            name={category.icon as keyof typeof Ionicons.glyphMap}
-                            size={20}
-                            color={category.color}
-                          />
+                        <View className="w-10 h-10 bg-primary-100 rounded-full items-center justify-center mr-3">
+                          <Ionicons name="person" size={20} color="#4F46E5" />
                         </View>
-                        <Text className="text-gray-900 font-medium">{category.name}</Text>
+                        <View>
+                          <Text className="text-gray-900 font-medium">{member.user_name}</Text>
+                          <Text className="text-xs text-gray-400">
+                            {member.transaction_count} transacciones
+                          </Text>
+                        </View>
                       </View>
                       <View className="items-end">
-                        <Text className="text-gray-900 font-semibold">
-                          {formatCurrency(category.total)}
-                        </Text>
-                        <Text className="text-gray-400 text-sm">
-                          {formatPercentage(percentage)}
+                        <Text className={`font-semibold ${
+                          member.balance >= 0 ? 'text-green-600' : 'text-red-500'
+                        }`}>
+                          {formatCurrency(member.balance)}
                         </Text>
                       </View>
                     </View>
 
-                    {/* Progress Bar */}
+                    <View className="flex-row gap-4 mb-2">
+                      <View className="flex-1">
+                        <Text className="text-xs text-gray-400">Ingreso</Text>
+                        <Text className="text-sm font-medium text-green-600">
+                          {formatCurrency(member.income)}
+                        </Text>
+                      </View>
+                      <View className="flex-1">
+                        <Text className="text-xs text-gray-400">Gasto</Text>
+                        <Text className="text-sm font-medium text-red-500">
+                          {formatCurrency(member.expense)}
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Contribution bar */}
                     <View className="h-2 bg-gray-100 rounded-full overflow-hidden">
                       <View
-                        className="h-full rounded-full"
-                        style={{
-                          width: `${percentage}%`,
-                          backgroundColor: category.color,
-                        }}
+                        className="h-full rounded-full bg-primary-500"
+                        style={{ width: `${Math.min(contributionPct, 100)}%` }}
                       />
                     </View>
+                    <Text className="text-xs text-gray-400 mt-1">
+                      {formatPercentage(contributionPct)} del ingreso total
+                    </Text>
                   </View>
                 );
               })}
             </View>
-          )}
-        </View>
+          </View>
+        )}
 
         {/* Budget Status */}
         {budgetStatuses && budgetStatuses.length > 0 && (
@@ -456,7 +585,7 @@ export default function ReportsScreen() {
             <View className="flex-row justify-between py-3 border-b border-gray-100">
               <Text className="text-gray-500">Total Transacciones</Text>
               <Text className="text-gray-900 font-medium">
-                {dashboard?.recent_transactions_count || 0}
+                {reports?.recent_transactions_count || 0}
               </Text>
             </View>
             <View className="flex-row justify-between py-3 border-b border-gray-100">

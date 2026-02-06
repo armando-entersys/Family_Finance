@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { QUERY_KEYS } from '@/constants';
 import * as statsService from '@/services/stats';
+import type { ReportsFilters } from '@/services/stats';
 
 // Dashboard data hook
 export const useDashboard = () => {
@@ -18,5 +19,15 @@ export const useSummary = (filters?: { date_from?: string; date_to?: string }) =
     queryKey: [...QUERY_KEYS.STATS, filters],
     queryFn: () => statsService.getSummary(filters),
     staleTime: 60000,
+  });
+};
+
+// Reports data hook with filters
+export const useReports = (filters?: ReportsFilters) => {
+  return useQuery({
+    queryKey: [...QUERY_KEYS.REPORTS, filters],
+    queryFn: () => statsService.getReports(filters),
+    staleTime: 60000,
+    refetchOnWindowFocus: true,
   });
 };

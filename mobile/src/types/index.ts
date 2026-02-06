@@ -249,3 +249,31 @@ export interface AppState {
   user: User | null;
   tokens: AuthTokens | null;
 }
+
+// ============================================
+// Reports Types
+// ============================================
+
+export interface MemberSummary {
+  user_id: string;
+  user_name: string;
+  income: number;
+  expense: number;
+  balance: number;
+  transaction_count: number;
+}
+
+export interface PeriodComparison {
+  current: FinancialSummary;
+  previous: FinancialSummary;
+  income_change_pct: number;
+  expense_change_pct: number;
+  savings_rate: number;
+}
+
+export interface ReportsData {
+  summary: FinancialSummary;
+  comparison: PeriodComparison;
+  members: MemberSummary[];
+  recent_transactions_count: number;
+}

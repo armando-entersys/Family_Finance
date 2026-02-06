@@ -26,6 +26,36 @@ class FinancialSummary(BaseModel):
     currency: str = "MXN"
 
 
+class MemberSummary(BaseModel):
+    """Schema for per-member financial summary."""
+
+    user_id: str
+    user_name: str
+    income: Decimal
+    expense: Decimal
+    balance: Decimal
+    transaction_count: int
+
+
+class PeriodComparison(BaseModel):
+    """Schema for period-over-period comparison."""
+
+    current: FinancialSummary
+    previous: FinancialSummary
+    income_change_pct: float
+    expense_change_pct: float
+    savings_rate: float
+
+
+class ReportsResponse(BaseModel):
+    """Schema for complete reports data."""
+
+    summary: FinancialSummary
+    comparison: PeriodComparison
+    members: list[MemberSummary]
+    recent_transactions_count: int
+
+
 class DashboardResponse(BaseModel):
     """Schema for dashboard data."""
 
@@ -109,5 +139,108 @@ async def get_dashboard(
             saving=summary_data["SAVING"],
             balance=summary_data["balance"],
         ),
+        recent_transactions_count=total,
+    )
+
+
+@router.get("/reports", response_model=ReportsResponse)
+async def get_reports(
+    current_user: CurrentUser,
+    db: DbSession,
+    date_from: Optional[datetime] = Query(None),
+    date_to: Optional[datetime] = Query(None),
+    category_id: Optional[int] = Query(None),
+) -> ReportsResponse:
+    """
+    Get complete reports data including summary, period comparison,
+    and per-member breakdown. Defaults to current month if no dates provided.
+    """
+    empty_summary = FinancialSummary(
+        income=Decimal("0"),
+        expense=Decimal("0"),
+        debt=Decimal("0"),
+        saving=Decimal("0"),
+        balance=Decimal("0"),
+    )
+
+    if not current_user.family_id:
+        return ReportsResponse(
+            summary=empty_summary,
+            comparison=PeriodComparison(
+                current=empty_summary,
+                previous=empty_summary,
+                income_change_pct=0.0,
+                expense_change_pct=0.0,
+                savings_rate=0.0,
+            ),
+            members=[],
+            recent_transactions_count=0,
+        )
+
+    # Default to current month
+    now = datetime.utcnow()
+    if not date_from:
+        date_from = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    if not date_to:
+        date_to = now
+
+    service = TransactionService(db)
+
+    # Get comparison (includes current summary)
+    comparison_data = await service.get_summary_with_comparison(
+        family_id=current_user.family_id,
+        date_from=date_from,
+        date_to=date_to,
+        category_id=category_id,
+    )
+
+    current_summary = comparison_data["current"]
+    previous_summary = comparison_data["previous"]
+
+    summary = FinancialSummary(
+        income=current_summary["INCOME"],
+        expense=current_summary["EXPENSE"],
+        debt=current_summary["DEBT"],
+        saving=current_summary["SAVING"],
+        balance=current_summary["balance"],
+    )
+
+    comparison = PeriodComparison(
+        current=summary,
+        previous=FinancialSummary(
+            income=previous_summary["INCOME"],
+            expense=previous_summary["EXPENSE"],
+            debt=previous_summary["DEBT"],
+            saving=previous_summary["SAVING"],
+            balance=previous_summary["balance"],
+        ),
+        income_change_pct=comparison_data["income_change_pct"],
+        expense_change_pct=comparison_data["expense_change_pct"],
+        savings_rate=comparison_data["savings_rate"],
+    )
+
+    # Get member breakdown
+    members_data = await service.get_member_summary(
+        family_id=current_user.family_id,
+        date_from=date_from,
+        date_to=date_to,
+        category_id=category_id,
+    )
+
+    members = [
+        MemberSummary(**m) for m in members_data
+    ]
+
+    # Get transaction count for period
+    _, total = await service.list_transactions(
+        family_id=current_user.family_id,
+        page=1,
+        size=1,
+    )
+
+    return ReportsResponse(
+        summary=summary,
+        comparison=comparison,
+        members=members,
         recent_transactions_count=total,
     )

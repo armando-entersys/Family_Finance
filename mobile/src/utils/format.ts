@@ -8,15 +8,16 @@ export const formatCurrency = (
   amount: number,
   currencyCode: string = 'MXN'
 ): string => {
+  const safeAmount = typeof amount === 'number' && !isNaN(amount) ? amount : 0;
   const currency = CURRENCIES.find((c) => c.code === currencyCode);
   const symbol = currency?.symbol || '$';
 
   const formatted = new Intl.NumberFormat('en-US', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(Math.abs(amount));
+  }).format(Math.abs(safeAmount));
 
-  return `${amount < 0 ? '-' : ''}${symbol}${formatted}`;
+  return `${safeAmount < 0 ? '-' : ''}${symbol}${formatted}`;
 };
 
 // Format date for display
@@ -88,5 +89,6 @@ export const truncate = (text: string, maxLength: number): string => {
 
 // Format percentage
 export const formatPercentage = (value: number, decimals: number = 1): string => {
-  return `${value.toFixed(decimals)}%`;
+  const safeValue = typeof value === 'number' && !isNaN(value) ? value : 0;
+  return `${safeValue.toFixed(decimals)}%`;
 };
