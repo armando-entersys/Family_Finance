@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, Text, TouchableOpacity, Alert, Platform } from 'react-native';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
@@ -17,21 +17,92 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
   const [permission, requestPermission] = useCameraPermissions();
   const [isCapturing, setIsCapturing] = useState(false);
   const [facing, setFacing] = useState<CameraType>('back');
-  const [cameraKey, setCameraKey] = useState(0);
   const cameraRef = useRef<CameraView>(null);
-
-  // Force remount camera on web to ensure back camera is used
-  useEffect(() => {
-    if (Platform.OS === 'web') {
-      setCameraKey((prev) => prev + 1);
-    }
-  }, [facing]);
 
   const toggleCameraFacing = () => {
     setFacing((current) => (current === 'back' ? 'front' : 'back'));
   };
 
-  // Handle camera permission
+  // On web, use HTML5 input with capture="environment" for back camera
+  const handleWebCapture = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.setAttribute('capture', 'environment');
+    input.onchange = (e: any) => {
+      const file = e.target?.files?.[0];
+      if (file) {
+        const uri = URL.createObjectURL(file);
+        onCapture(uri);
+      }
+    };
+    input.click();
+  };
+
+  // On web, pick from gallery via file input without capture
+  const handleWebGallery = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e: any) => {
+      const file = e.target?.files?.[0];
+      if (file) {
+        const uri = URL.createObjectURL(file);
+        onCapture(uri);
+      }
+    };
+    input.click();
+  };
+
+  // Web: skip CameraView entirely, show buttons to launch camera/gallery
+  if (Platform.OS === 'web') {
+    return (
+      <View className="flex-1 bg-gray-900">
+        {/* Top Bar */}
+        <View className="flex-row items-center justify-between px-4 pt-12 pb-4">
+          <TouchableOpacity
+            onPress={onClose}
+            className="w-10 h-10 rounded-full bg-white/10 items-center justify-center"
+          >
+            <Ionicons name="close" size={24} color="white" />
+          </TouchableOpacity>
+          <Text className="text-white font-semibold text-lg">Escanear Recibo</Text>
+          <View className="w-10" />
+        </View>
+
+        {/* Center content */}
+        <View className="flex-1 items-center justify-center px-8">
+          <View className="w-24 h-24 bg-primary-500/20 rounded-full items-center justify-center mb-6">
+            <Ionicons name="camera" size={48} color="#818CF8" />
+          </View>
+          <Text className="text-white text-xl font-bold text-center mb-2">
+            Escanear Recibo
+          </Text>
+          <Text className="text-white/60 text-center mb-8">
+            Toma una foto del recibo con la camara trasera o selecciona una imagen de la galeria
+          </Text>
+
+          <TouchableOpacity
+            onPress={handleWebCapture}
+            className="w-full bg-primary-600 rounded-2xl py-4 flex-row items-center justify-center mb-3"
+          >
+            <Ionicons name="camera-outline" size={24} color="white" />
+            <Text className="text-white font-semibold text-lg ml-3">Tomar Foto</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={handleWebGallery}
+            className="w-full bg-white/10 rounded-2xl py-4 flex-row items-center justify-center"
+          >
+            <Ionicons name="images-outline" size={24} color="white" />
+            <Text className="text-white font-semibold text-lg ml-3">Galeria</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  // Native: handle camera permission
   if (!permission) {
     return (
       <View className="flex-1 bg-gray-900 items-center justify-center">
@@ -65,7 +136,7 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
     );
   }
 
-  // Take photo
+  // Native: take photo
   const handleCapture = async () => {
     if (!cameraRef.current || isCapturing) return;
 
@@ -87,23 +158,7 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
     }
   };
 
-  // On web, use HTML5 input with capture="environment" for back camera
-  const handleWebCapture = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.setAttribute('capture', 'environment');
-    input.onchange = (e: any) => {
-      const file = e.target?.files?.[0];
-      if (file) {
-        const uri = URL.createObjectURL(file);
-        onCapture(uri);
-      }
-    };
-    input.click();
-  };
-
-  // Pick from gallery
+  // Native: pick from gallery
   const handlePickFromGallery = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -123,9 +178,8 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
 
   return (
     <View className="flex-1 bg-black">
-      {/* Camera View */}
+      {/* Camera View - Native only */}
       <CameraView
-        key={cameraKey}
         ref={cameraRef}
         style={{ flex: 1 }}
         facing={facing}
@@ -172,7 +226,7 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
 
               {/* Capture Button */}
               <TouchableOpacity
-                onPress={Platform.OS === 'web' ? handleWebCapture : handleCapture}
+                onPress={handleCapture}
                 disabled={isCapturing}
                 className="w-20 h-20 rounded-full bg-white items-center justify-center"
               >
