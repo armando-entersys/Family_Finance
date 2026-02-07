@@ -16,8 +16,9 @@ import { useRecurringExpenses } from '@/hooks/useRecurringExpenses';
 import { useCategoryBudgetsStatus } from '@/hooks/useCategoryBudgets';
 import { formatCurrency, formatPercentage } from '@/utils/format';
 import { EXPENSE_CATEGORIES } from '@/constants';
+import { DateInput } from '@/components/common/DateInput';
 
-type Period = 'week' | 'month' | 'year';
+type Period = 'week' | 'month' | 'year' | 'custom';
 
 const getDateRange = (period: Period) => {
   const now = new Date();
@@ -38,6 +39,10 @@ const getDateRange = (period: Period) => {
       from = new Date(now.getFullYear(), 0, 1);
       break;
     }
+    case 'custom': {
+      // Custom range handled separately
+      return null;
+    }
   }
 
   return {
@@ -56,8 +61,19 @@ const getSavingsRateStyle = (rate: number) => {
 export default function ReportsScreen() {
   const [period, setPeriod] = useState<Period>('month');
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | undefined>(undefined);
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
 
-  const dateRange = useMemo(() => getDateRange(period), [period]);
+  const dateRange = useMemo(() => {
+    if (period === 'custom') {
+      if (!customFrom || !customTo) return getDateRange('month');
+      return {
+        date_from: new Date(customFrom + 'T00:00:00').toISOString(),
+        date_to: new Date(customTo + 'T23:59:59').toISOString(),
+      };
+    }
+    return getDateRange(period);
+  }, [period, customFrom, customTo]);
   const filters = useMemo(() => ({
     ...dateRange,
     category_id: selectedCategoryId,
@@ -108,6 +124,7 @@ export default function ReportsScreen() {
               { key: 'week' as Period, label: 'Semana' },
               { key: 'month' as Period, label: 'Mes' },
               { key: 'year' as Period, label: 'Ano' },
+              { key: 'custom' as Period, label: 'Fechas' },
             ].map((item) => (
               <TouchableOpacity
                 key={item.key}
@@ -117,7 +134,7 @@ export default function ReportsScreen() {
                 onPress={() => setPeriod(item.key)}
               >
                 <Text
-                  className={`text-center font-medium ${
+                  className={`text-center font-medium text-xs ${
                     period === item.key ? 'text-primary-600' : 'text-gray-500'
                   }`}
                 >
@@ -126,6 +143,36 @@ export default function ReportsScreen() {
               </TouchableOpacity>
             ))}
           </View>
+
+          {/* Custom Date Range Picker */}
+          {period === 'custom' && (
+            <View className="mt-3 bg-gray-50 rounded-xl p-3">
+              <View className="flex-row gap-3">
+                <View className="flex-1">
+                  <DateInput
+                    value={customFrom}
+                    onChange={setCustomFrom}
+                    placeholder="Desde"
+                    maxDate={customTo ? new Date(customTo + 'T00:00:00') : new Date()}
+                  />
+                </View>
+                <View className="flex-1">
+                  <DateInput
+                    value={customTo}
+                    onChange={setCustomTo}
+                    placeholder="Hasta"
+                    minDate={customFrom ? new Date(customFrom + 'T00:00:00') : undefined}
+                    maxDate={new Date()}
+                  />
+                </View>
+              </View>
+              {(!customFrom || !customTo) && (
+                <Text className="text-gray-400 text-xs text-center mt-2">
+                  Selecciona ambas fechas para filtrar
+                </Text>
+              )}
+            </View>
+          )}
 
           {/* Category Filter */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-3">
