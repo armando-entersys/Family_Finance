@@ -206,6 +206,7 @@ class TransactionService:
         query = select(
             Transaction.user_id,
             User.name.label("user_name"),
+            User.email.label("user_email"),
             Transaction.type,
             func.sum(Transaction.amount_base).label("total"),
             func.count(Transaction.id).label("count"),
@@ -222,7 +223,7 @@ class TransactionService:
         if category_id:
             query = query.where(Transaction.category_id == category_id)
 
-        query = query.group_by(Transaction.user_id, User.name, Transaction.type)
+        query = query.group_by(Transaction.user_id, User.name, User.email, Transaction.type)
 
         result = await self.db.execute(query)
         rows = result.all()
@@ -232,9 +233,13 @@ class TransactionService:
         for row in rows:
             uid = row.user_id
             if uid not in members:
+                # Use name, fallback to email prefix, then "Sin nombre"
+                display_name = row.user_name
+                if not display_name and row.user_email:
+                    display_name = row.user_email.split("@")[0]
                 members[uid] = {
                     "user_id": str(uid),
-                    "user_name": row.user_name or "Sin nombre",
+                    "user_name": display_name or "Sin nombre",
                     "income": Decimal("0"),
                     "expense": Decimal("0"),
                     "balance": Decimal("0"),
