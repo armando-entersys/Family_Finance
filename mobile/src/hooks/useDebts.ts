@@ -70,6 +70,8 @@ export const useAddPayment = () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.DEBTS });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.DEBT(variables.debtId) });
       queryClient.invalidateQueries({ queryKey: ['debts', 'summary'] });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.TRANSACTIONS });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.DASHBOARD });
     },
   });
 };

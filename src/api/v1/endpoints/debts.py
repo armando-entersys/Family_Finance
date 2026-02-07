@@ -226,7 +226,7 @@ async def add_payment(
             detail="Cannot add payment to archived debt",
         )
 
-    payment = await service.add_payment(debt=debt, data=data)
+    payment = await service.add_payment(debt=debt, data=data, user_id=current_user.id)
     return payment
 
 

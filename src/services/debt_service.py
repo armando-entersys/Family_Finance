@@ -10,7 +10,7 @@ import uuid
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.domain.models import Debt, DebtPayment
+from src.domain.models import Debt, DebtPayment, Transaction
 from src.domain.schemas import DebtCreate, DebtUpdate, PaymentCreate
 
 
@@ -95,11 +95,15 @@ class DebtService:
         self,
         debt: Debt,
         data: PaymentCreate,
+        user_id: uuid.UUID = None,
     ) -> DebtPayment:
         """
         Add a payment to a debt (BR-004: Immutable).
         Payments cannot be deleted, only adjusted.
+        Also creates a DEBT transaction so it appears in the transactions list.
         """
+        from datetime import datetime
+
         payment = DebtPayment(
             debt_id=debt.id,
             amount=data.amount,
@@ -118,6 +122,22 @@ class DebtService:
         # Auto-archive if fully paid
         if debt.current_balance == 0:
             debt.is_archived = True
+
+        # Create a transaction so it appears in the transactions list
+        if user_id:
+            transaction = Transaction(
+                family_id=debt.family_id,
+                user_id=user_id,
+                category_id=None,
+                amount_original=data.amount,
+                currency_code=debt.currency_code,
+                exchange_rate=debt.exchange_rate_fixed,
+                amount_base=data.amount * debt.exchange_rate_fixed,
+                trx_date=data.payment_date or datetime.utcnow(),
+                type="DEBT",
+                description=f"Pago deuda: {debt.creditor}",
+            )
+            self.db.add(transaction)
 
         await self.db.flush()
         await self.db.refresh(payment)

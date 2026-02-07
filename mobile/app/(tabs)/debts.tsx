@@ -51,6 +51,8 @@ export default function DebtsScreen() {
   const [editCreditor, setEditCreditor] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editDebtType, setEditDebtType] = useState<CreateDebtData['debt_type']>('credit_card');
+  const [editTotalAmount, setEditTotalAmount] = useState('');
+  const [editCurrentBalance, setEditCurrentBalance] = useState('');
   const [editInterestRate, setEditInterestRate] = useState('');
   const [editDueDate, setEditDueDate] = useState('');
 
@@ -86,6 +88,8 @@ export default function DebtsScreen() {
     setEditCreditor(debt.creditor);
     setEditDescription(debt.description || '');
     setEditDebtType(debt.debt_type as CreateDebtData['debt_type']);
+    setEditTotalAmount(debt.total_amount?.toString() || '');
+    setEditCurrentBalance(debt.current_balance?.toString() || '');
     setEditInterestRate(debt.interest_rate?.toString() || '');
     setEditDueDate(debt.due_date ? debt.due_date.split('T')[0] : '');
     setShowEditModal(true);
@@ -106,6 +110,8 @@ export default function DebtsScreen() {
           creditor: editCreditor.trim(),
           description: editDescription.trim() || undefined,
           debt_type: editDebtType,
+          total_amount: editTotalAmount ? parseFloat(editTotalAmount) : undefined,
+          current_balance: editCurrentBalance ? parseFloat(editCurrentBalance) : undefined,
           interest_rate: editInterestRate ? parseFloat(editInterestRate) : undefined,
           due_date: editDueDate ? new Date(editDueDate).toISOString() : undefined,
         },
@@ -476,6 +482,25 @@ export default function DebtsScreen() {
               value={editDescription}
               onChangeText={setEditDescription}
             />
+
+            <View className="flex-row gap-3 mb-4">
+              <View className="flex-1">
+                <CurrencyInputSmall
+                  label="Monto original"
+                  value={editTotalAmount}
+                  onChange={setEditTotalAmount}
+                  placeholder="15,000.00"
+                />
+              </View>
+              <View className="flex-1">
+                <CurrencyInputSmall
+                  label="Saldo actual"
+                  value={editCurrentBalance}
+                  onChange={setEditCurrentBalance}
+                  placeholder="10,000.00"
+                />
+              </View>
+            </View>
 
             <Text className="text-gray-600 mb-2">Tasa de interes anual % (opcional)</Text>
             <TextInput

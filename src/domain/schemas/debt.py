@@ -33,6 +33,8 @@ class DebtUpdate(BaseModel):
     creditor: Optional[str] = Field(None, min_length=1, max_length=100)
     description: Optional[str] = Field(None, max_length=500)
     debt_type: Optional[DebtType] = None
+    total_amount: Optional[Decimal] = Field(None, gt=0)
+    current_balance: Optional[Decimal] = Field(None, ge=0)
     interest_rate: Optional[Decimal] = Field(None, ge=0, le=100)
     due_date: Optional[datetime] = None
     is_archived: Optional[bool] = None
