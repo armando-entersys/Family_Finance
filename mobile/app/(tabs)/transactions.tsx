@@ -3,12 +3,14 @@ import {
   View,
   Text,
   FlatList,
+  ScrollView,
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTransactionsInfinite, useDeleteTransaction } from '@/hooks/useTransactions';
+import { useFamilyMembers } from '@/hooks/useSettings';
 import { TransactionItem } from '@/components/transactions/TransactionItem';
 import { showSuccess, showError } from '@/utils/feedback';
 import type { TransactionType } from '@/types';
@@ -25,6 +27,8 @@ export default function TransactionsScreen() {
   const [selectedFilter, setSelectedFilter] = useState<TransactionType | undefined>(
     undefined
   );
+  const [selectedUserId, setSelectedUserId] = useState<string | undefined>(undefined);
+  const { data: members } = useFamilyMembers();
 
   const {
     data,
@@ -34,7 +38,7 @@ export default function TransactionsScreen() {
     isLoading,
     refetch,
     isRefetching,
-  } = useTransactionsInfinite({ type: selectedFilter });
+  } = useTransactionsInfinite({ type: selectedFilter, user_id: selectedUserId });
 
   const deleteTransaction = useDeleteTransaction();
 
@@ -78,33 +82,85 @@ export default function TransactionsScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Filters */}
-        <FlatList
-          horizontal
-          data={FILTERS}
-          keyExtractor={(item) => item.label}
-          showsHorizontalScrollIndicator={false}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              onPress={() => setSelectedFilter(item.value)}
-              className={`px-4 py-2 rounded-full mr-2 ${
-                selectedFilter === item.value
-                  ? 'bg-primary-600'
-                  : 'bg-gray-100'
-              }`}
-            >
-              <Text
-                className={`font-medium ${
+        {/* Type Filters */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <View className="flex-row gap-2">
+            {FILTERS.map((item) => (
+              <TouchableOpacity
+                key={item.label}
+                onPress={() => setSelectedFilter(item.value)}
+                className={`px-4 py-2 rounded-full ${
                   selectedFilter === item.value
-                    ? 'text-white'
-                    : 'text-gray-700'
+                    ? 'bg-primary-600'
+                    : 'bg-gray-100'
                 }`}
               >
-                {item.label}
-              </Text>
-            </TouchableOpacity>
-          )}
-        />
+                <Text
+                  className={`font-medium ${
+                    selectedFilter === item.value
+                      ? 'text-white'
+                      : 'text-gray-700'
+                  }`}
+                >
+                  {item.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </ScrollView>
+
+        {/* Member Filter */}
+        {members && members.length > 1 && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-2">
+            <View className="flex-row gap-2">
+              <TouchableOpacity
+                onPress={() => setSelectedUserId(undefined)}
+                className={`px-3 py-1.5 rounded-full flex-row items-center ${
+                  !selectedUserId ? 'bg-indigo-100' : 'bg-gray-100'
+                }`}
+              >
+                <Ionicons
+                  name="people"
+                  size={14}
+                  color={!selectedUserId ? '#4F46E5' : '#6B7280'}
+                />
+                <Text
+                  className={`ml-1.5 text-sm font-medium ${
+                    !selectedUserId ? 'text-indigo-700' : 'text-gray-600'
+                  }`}
+                >
+                  Todos
+                </Text>
+              </TouchableOpacity>
+              {members.map((member) => {
+                const displayName = member.name || member.email.split('@')[0];
+                const isSelected = selectedUserId === member.id;
+                return (
+                  <TouchableOpacity
+                    key={member.id}
+                    onPress={() => setSelectedUserId(isSelected ? undefined : member.id)}
+                    className={`px-3 py-1.5 rounded-full flex-row items-center ${
+                      isSelected ? 'bg-indigo-100' : 'bg-gray-100'
+                    }`}
+                  >
+                    <Ionicons
+                      name="person"
+                      size={14}
+                      color={isSelected ? '#4F46E5' : '#6B7280'}
+                    />
+                    <Text
+                      className={`ml-1.5 text-sm font-medium ${
+                        isSelected ? 'text-indigo-700' : 'text-gray-600'
+                      }`}
+                    >
+                      {displayName}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </ScrollView>
+        )}
       </View>
 
       {/* Transactions List */}

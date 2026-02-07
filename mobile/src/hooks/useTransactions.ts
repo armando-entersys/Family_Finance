@@ -20,6 +20,7 @@ export const useTransactionsInfinite = (filters?: {
   date_from?: string;
   date_to?: string;
   search?: string;
+  user_id?: string;
 }) => {
   return useInfiniteQuery({
     queryKey: [...QUERY_KEYS.TRANSACTIONS, filters],

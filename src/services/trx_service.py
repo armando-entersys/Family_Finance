@@ -198,6 +198,8 @@ class TransactionService:
                 query = query.where(Transaction.amount_base <= filters.max_amount)
             if filters.search:
                 query = query.where(Transaction.description.ilike(f"%{filters.search}%"))
+            if filters.user_id:
+                query = query.where(Transaction.user_id == filters.user_id)
 
         # Get total count
         count_query = select(func.count()).select_from(query.subquery())

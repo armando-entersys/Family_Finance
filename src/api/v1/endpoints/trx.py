@@ -56,6 +56,7 @@ async def list_transactions(
     date_from: Optional[str] = Query(None),
     date_to: Optional[str] = Query(None),
     search: Optional[str] = Query(None),
+    user_id: Optional[uuid.UUID] = Query(None),
 ) -> TransactionList:
     """List transactions with filtering and pagination."""
     if not current_user.family_id:
@@ -69,6 +70,7 @@ async def list_transactions(
         type=type,
         category_id=category_id,
         search=search,
+        user_id=user_id,
     )
 
     service = TransactionService(db)

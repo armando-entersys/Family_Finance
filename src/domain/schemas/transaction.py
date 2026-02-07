@@ -89,3 +89,4 @@ class TransactionFilter(BaseModel):
     min_amount: Optional[Decimal] = None
     max_amount: Optional[Decimal] = None
     search: Optional[str] = None
+    user_id: Optional[uuid.UUID] = None
