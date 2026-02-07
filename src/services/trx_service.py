@@ -12,6 +12,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from src.domain.models import Transaction
+from src.domain.models.debt import Debt
+from src.domain.models.recurring_expense import RecurringExpense
 from src.domain.models.user import User
 from src.domain.schemas import TransactionCreate, TransactionFilter, TransactionUpdate
 
@@ -100,9 +102,70 @@ class TransactionService:
         self,
         transaction: Transaction,
     ) -> None:
-        """Delete a transaction."""
+        """
+        Delete a transaction.
+        If DEBT type: restore balance on the corresponding debt.
+        If EXPENSE type from recurring: revert recurring expense next_due_date.
+        """
+        # Reverse debt payment if applicable
+        if transaction.type == "DEBT" and transaction.description and transaction.description.startswith("Pago deuda: "):
+            creditor = transaction.description.replace("Pago deuda: ", "")
+            result = await self.db.execute(
+                select(Debt).where(
+                    Debt.family_id == transaction.family_id,
+                    Debt.creditor == creditor,
+                )
+            )
+            debt = result.scalar_one_or_none()
+            if debt:
+                debt.current_balance += transaction.amount_original
+                if debt.is_archived and debt.current_balance > 0:
+                    debt.is_archived = False
+
+        # Reverse recurring expense execution if applicable
+        if transaction.type == "EXPENSE" and transaction.description:
+            result = await self.db.execute(
+                select(RecurringExpense).where(
+                    RecurringExpense.family_id == transaction.family_id,
+                    RecurringExpense.name == transaction.description,
+                    RecurringExpense.amount == transaction.amount_original,
+                    RecurringExpense.is_active == True,
+                )
+            )
+            recurring = result.scalar_one_or_none()
+            if recurring:
+                # Revert next_due_date one period back
+                recurring.next_due_date = self._revert_due_date(
+                    recurring.next_due_date,
+                    recurring.frequency,
+                )
+                recurring.last_executed_date = None
+
         await self.db.delete(transaction)
         await self.db.flush()
+
+    def _revert_due_date(self, current_next: datetime, frequency: str):
+        """Calculate the previous due date (reverse of advancing one period)."""
+        from datetime import date as date_type
+        d = current_next if isinstance(current_next, date_type) else current_next.date() if hasattr(current_next, 'date') else current_next
+
+        if frequency == "DAILY":
+            return d - timedelta(days=1)
+        elif frequency == "WEEKLY":
+            return d - timedelta(weeks=1)
+        elif frequency == "BIWEEKLY":
+            return d - timedelta(weeks=2)
+        elif frequency == "MONTHLY":
+            month = d.month - 1
+            year = d.year
+            if month < 1:
+                month = 12
+                year -= 1
+            day = min(d.day, 28)  # Safe for all months
+            from datetime import date as dt_date
+            return dt_date(year, month, day)
+        else:
+            return d - timedelta(days=30)
 
     async def list_transactions(
         self,
