@@ -3,6 +3,8 @@ Transaction endpoints: CRUD operations for financial transactions.
 """
 
 import math
+from datetime import datetime
+from decimal import Decimal
 from typing import Optional
 import uuid
 
@@ -88,6 +90,38 @@ async def list_transactions(
         size=size,
         pages=math.ceil(total / size) if total > 0 else 0,
     )
+
+
+@router.get("/check-duplicate")
+async def check_duplicate(
+    current_user: CurrentUser,
+    db: DbSession,
+    amount: Decimal = Query(...),
+    trx_date: str = Query(...),
+    description: Optional[str] = Query(None),
+    type: Optional[str] = Query(None),
+) -> dict:
+    """Check if a similar transaction already exists (same amount, date, description)."""
+    if not current_user.family_id:
+        return {"is_duplicate": False}
+
+    service = TransactionService(db)
+    existing = await service.check_duplicate(
+        family_id=current_user.family_id,
+        amount=amount,
+        trx_date=datetime.fromisoformat(trx_date),
+        description=description,
+        type=type,
+    )
+
+    if existing:
+        return {
+            "is_duplicate": True,
+            "existing_id": str(existing.id),
+            "existing_description": existing.description,
+            "existing_amount": float(existing.amount_original),
+        }
+    return {"is_duplicate": False}
 
 
 @router.get("/{transaction_id}", response_model=TransactionResponse)

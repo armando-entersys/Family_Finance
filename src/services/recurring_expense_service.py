@@ -127,6 +127,36 @@ class RecurringExpenseService:
         result = await self.db.execute(query)
         return list(result.scalars().all())
 
+    async def auto_execute_due(
+        self,
+        family_id: uuid.UUID,
+        user_id: uuid.UUID,
+    ) -> list[Transaction]:
+        """
+        Auto-execute all due recurring expenses that have is_automatic=True.
+        Returns list of created transactions.
+        """
+        query = select(RecurringExpense).where(
+            RecurringExpense.family_id == family_id,
+            RecurringExpense.is_active == True,
+            RecurringExpense.is_automatic == True,
+            RecurringExpense.next_due_date <= date.today(),
+        )
+        result = await self.db.execute(query)
+        expenses = list(result.scalars().all())
+
+        created: list[Transaction] = []
+        for expense in expenses:
+            # Execute each due automatic expense (may be multiple periods behind)
+            while expense.next_due_date <= date.today():
+                trx = await self.execute_recurring_expense(
+                    expense=expense,
+                    user_id=user_id,
+                )
+                created.append(trx)
+
+        return created
+
     async def execute_recurring_expense(
         self,
         expense: RecurringExpense,

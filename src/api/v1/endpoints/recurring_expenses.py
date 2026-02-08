@@ -15,6 +15,7 @@ from src.domain.schemas import (
     RecurringExpenseExecute,
     TransactionResponse,
 )
+from src.domain.schemas.recurring_expense import AutoExecuteResponse
 from src.services.recurring_expense_service import RecurringExpenseService
 
 router = APIRouter(prefix="/recurring-expenses", tags=["Recurring Expenses"])
@@ -76,6 +77,30 @@ async def list_due_expenses(
     )
 
     return expenses
+
+
+@router.post("/auto-execute", response_model=AutoExecuteResponse)
+async def auto_execute_recurring(
+    current_user: CurrentUser,
+    db: DbSession,
+) -> AutoExecuteResponse:
+    """
+    Auto-execute all due recurring expenses that are marked as automatic.
+    Called on app load to catch up on any missed executions.
+    """
+    if not current_user.family_id:
+        return AutoExecuteResponse(executed_count=0, transactions_created=0)
+
+    service = RecurringExpenseService(db)
+    transactions = await service.auto_execute_due(
+        family_id=current_user.family_id,
+        user_id=current_user.id,
+    )
+
+    return AutoExecuteResponse(
+        executed_count=len(set(t.description for t in transactions)),
+        transactions_created=len(transactions),
+    )
 
 
 @router.get("/{expense_id}", response_model=RecurringExpenseResponse)

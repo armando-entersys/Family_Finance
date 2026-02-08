@@ -215,6 +215,41 @@ class TransactionService:
 
         return transactions, total
 
+    async def check_duplicate(
+        self,
+        family_id: uuid.UUID,
+        amount: Decimal,
+        trx_date: datetime,
+        description: Optional[str] = None,
+        type: Optional[str] = None,
+    ) -> Optional[Transaction]:
+        """
+        Check if a similar transaction exists (same family, amount, date, description).
+        Returns the existing transaction if found, None otherwise.
+        """
+        # Check within same day
+        day_start = trx_date.replace(hour=0, minute=0, second=0, microsecond=0)
+        day_end = day_start + timedelta(days=1)
+
+        query = (
+            select(Transaction)
+            .where(
+                Transaction.family_id == family_id,
+                Transaction.amount_original == amount,
+                Transaction.trx_date >= day_start,
+                Transaction.trx_date < day_end,
+            )
+            .limit(1)
+        )
+
+        if description:
+            query = query.where(Transaction.description == description)
+        if type:
+            query = query.where(Transaction.type == type)
+
+        result = await self.db.execute(query)
+        return result.scalar_one_or_none()
+
     async def get_summary(
         self,
         family_id: uuid.UUID,

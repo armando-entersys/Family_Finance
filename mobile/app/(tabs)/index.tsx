@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { TransactionItem } from '@/components/transactions/TransactionItem';
 import { formatCurrency } from '@/utils/format';
 import { showSuccess, showError } from '@/utils/feedback';
+import { autoExecuteRecurring } from '@/services/recurringExpenses';
 
 export default function HomeScreen() {
   const { user } = useAuthStore();
@@ -34,6 +35,23 @@ export default function HomeScreen() {
       .sort((a, b) => new Date(b.trx_date).getTime() - new Date(a.trx_date).getTime());
     return searchTrimmed ? items : items.slice(0, 5);
   }, [transactionsData, searchTrimmed]);
+
+  // Auto-execute due automatic recurring expenses on mount
+  const autoExecuteRan = useRef(false);
+  useEffect(() => {
+    if (autoExecuteRan.current) return;
+    autoExecuteRan.current = true;
+    autoExecuteRecurring()
+      .then((result) => {
+        if (result.transactions_created > 0) {
+          refetch();
+          showSuccess(`${result.transactions_created} gasto(s) recurrente(s) registrado(s) automaticamente`);
+        }
+      })
+      .catch(() => {
+        // Silently ignore - non-critical
+      });
+  }, []);
 
   const handleDelete = async (id: string) => {
     try {

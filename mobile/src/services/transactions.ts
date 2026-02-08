@@ -67,6 +67,25 @@ export const deleteTransaction = async (id: string): Promise<void> => {
   await api.delete(API_ENDPOINTS.TRANSACTION(id));
 };
 
+// Check for duplicate transaction
+export const checkDuplicate = async (params: {
+  amount: number;
+  trx_date: string;
+  description?: string;
+  type?: string;
+}): Promise<{ is_duplicate: boolean; existing_description?: string; existing_amount?: number }> => {
+  const queryParams = new URLSearchParams();
+  queryParams.append('amount', params.amount.toString());
+  queryParams.append('trx_date', params.trx_date);
+  if (params.description) queryParams.append('description', params.description);
+  if (params.type) queryParams.append('type', params.type);
+
+  const response = await api.get<{ is_duplicate: boolean; existing_description?: string; existing_amount?: number }>(
+    `${API_ENDPOINTS.TRANSACTIONS}/check-duplicate?${queryParams.toString()}`
+  );
+  return response.data;
+};
+
 // Upload receipt attachment
 export const uploadAttachment = async (
   transactionId: string,

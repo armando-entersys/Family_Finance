@@ -16,8 +16,9 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, RECEIPT_CATEGORY_MAP } from '@/constants';
 import { useCreateTransaction, useUploadAttachment } from '@/hooks/useTransactions';
+import { checkDuplicate } from '@/services/transactions';
 import { scanReceipt } from '@/services/receiptScanner';
-import { showSuccess, showError } from '@/utils/feedback';
+import { showSuccess, showError, showConfirm } from '@/utils/feedback';
 import { DateInput } from '@/components/common/DateInput';
 import { CurrencyInput } from '@/components/common/CurrencyInput';
 import type { TransactionType, InvoiceData } from '@/types';
@@ -155,15 +156,9 @@ export default function AddExpenseScreen() {
     setInvoiceData(null);
   };
 
-  // Save transaction
-  const handleSave = async () => {
-    if (!amount || parseFloat(amount) <= 0) {
-      showError('Ingresa un monto valido');
-      return;
-    }
-
+  // Actually create and save the transaction
+  const doSave = async () => {
     try {
-      // Create the transaction
       const transaction = await createTransaction.mutateAsync({
         amount_original: parseFloat(amount),
         type,
@@ -182,7 +177,6 @@ export default function AddExpenseScreen() {
           });
         } catch (uploadError) {
           console.error('Upload error:', uploadError);
-          // Continue anyway, transaction was created
         }
       }
 
@@ -193,6 +187,37 @@ export default function AddExpenseScreen() {
       console.error('Save error:', error);
       showError('No se pudo guardar la transaccion. Intenta de nuevo.');
     }
+  };
+
+  // Save transaction with duplicate check
+  const handleSave = async () => {
+    if (!amount || parseFloat(amount) <= 0) {
+      showError('Ingresa un monto valido');
+      return;
+    }
+
+    try {
+      // Check for duplicates
+      const dupCheck = await checkDuplicate({
+        amount: parseFloat(amount),
+        trx_date: new Date(date).toISOString(),
+        description: description || undefined,
+        type,
+      });
+
+      if (dupCheck.is_duplicate) {
+        showConfirm(
+          'Posible duplicado',
+          `Ya existe una transaccion similar: "${dupCheck.existing_description}" por $${dupCheck.existing_amount?.toFixed(2)} en la misma fecha. Deseas guardarla de todos modos?`,
+          doSave
+        );
+        return;
+      }
+    } catch {
+      // If check fails, proceed anyway
+    }
+
+    await doSave();
   };
 
   const isSaving = createTransaction.isPending || uploadAttachment.isPending;

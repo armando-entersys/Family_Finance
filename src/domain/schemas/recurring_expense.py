@@ -66,3 +66,10 @@ class RecurringExpenseExecute(BaseModel):
 
     description: Optional[str] = Field(None, max_length=500)
     execution_date: Optional[date] = None  # Defaults to today if not provided
+
+
+class AutoExecuteResponse(BaseModel):
+    """Response for auto-execute endpoint."""
+
+    executed_count: int
+    transactions_created: int

@@ -89,3 +89,11 @@ export async function executeRecurringExpense(
   const response = await api.post(API_ENDPOINTS.RECURRING_EXPENSE_EXECUTE(id), data || {});
   return response.data;
 }
+
+// Auto-execute all due automatic recurring expenses
+export async function autoExecuteRecurring(): Promise<{ executed_count: number; transactions_created: number }> {
+  const response = await api.post<{ executed_count: number; transactions_created: number }>(
+    `${API_ENDPOINTS.RECURRING_EXPENSES}/auto-execute`
+  );
+  return response.data;
+}
