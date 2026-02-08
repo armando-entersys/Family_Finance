@@ -114,9 +114,9 @@ class TransactionService:
                 select(Debt).where(
                     Debt.family_id == transaction.family_id,
                     Debt.creditor == creditor,
-                )
+                ).limit(1)
             )
-            debt = result.scalar_one_or_none()
+            debt = result.scalars().first()
             if debt:
                 debt.current_balance += transaction.amount_original
                 if debt.is_archived and debt.current_balance > 0:
@@ -130,9 +130,9 @@ class TransactionService:
                     RecurringExpense.name == transaction.description,
                     RecurringExpense.amount == transaction.amount_original,
                     RecurringExpense.is_active == True,
-                )
+                ).limit(1)
             )
-            recurring = result.scalar_one_or_none()
+            recurring = result.scalars().first()
             if recurring:
                 # Revert next_due_date one period back
                 recurring.next_due_date = self._revert_due_date(
