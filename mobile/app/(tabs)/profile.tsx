@@ -24,6 +24,7 @@ import {
   useInviteFamilyMember,
   useRemoveFamilyMember,
 } from '@/hooks/useSettings';
+import { changePassword } from '@/services/settings';
 import { CURRENCIES } from '@/constants';
 
 const LANGUAGES = [
@@ -68,8 +69,13 @@ export default function ProfileScreen() {
   const [showFamilyModal, setShowFamilyModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showEditProfileModal, setShowEditProfileModal] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
 
   // Form states
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<'MEMBER' | 'ADMIN'>('MEMBER');
   const [editName, setEditName] = useState(user?.name || '');
@@ -209,6 +215,35 @@ export default function ProfileScreen() {
     setIsEditingFamilyName(true);
   };
 
+  const handleChangePassword = async () => {
+    if (!currentPassword) {
+      if (Platform.OS === 'web') window.alert('Ingresa tu contrasena actual');
+      return;
+    }
+    if (newPassword.length < 6) {
+      if (Platform.OS === 'web') window.alert('La nueva contrasena debe tener al menos 6 caracteres');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      if (Platform.OS === 'web') window.alert('Las contrasenas no coinciden');
+      return;
+    }
+    setIsChangingPassword(true);
+    try {
+      await changePassword(currentPassword, newPassword);
+      setShowPasswordModal(false);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      if (Platform.OS === 'web') window.alert('Contrasena actualizada correctamente');
+    } catch (error: any) {
+      const msg = error?.response?.data?.detail || 'No se pudo cambiar la contrasena';
+      if (Platform.OS === 'web') window.alert(`Error: ${msg}`);
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
   const currentCurrency = CURRENCIES.find((c) => c.code === userSettings?.preferred_currency) || CURRENCIES[0];
   const currentLanguage = LANGUAGES.find((l) => l.code === userSettings?.language) || LANGUAGES[0];
 
@@ -305,13 +340,25 @@ export default function ProfileScreen() {
             {/* Moneda */}
             <TouchableOpacity
               onPress={() => setShowCurrencyModal(true)}
-              className="flex-row items-center px-4 py-3.5"
+              className="flex-row items-center px-4 py-3.5 border-b border-gray-100"
             >
               <View className="w-9 h-9 bg-gray-100 rounded-full items-center justify-center mr-3">
                 <Ionicons name="cash-outline" size={20} color="#6B7280" />
               </View>
               <Text className="flex-1 text-gray-900 font-medium">Moneda</Text>
               <Text className="text-gray-400 mr-2">{currentCurrency.code}</Text>
+              <Ionicons name="chevron-forward" size={20} color="#D1D5DB" />
+            </TouchableOpacity>
+
+            {/* Cambiar Contrasena */}
+            <TouchableOpacity
+              onPress={() => setShowPasswordModal(true)}
+              className="flex-row items-center px-4 py-3.5"
+            >
+              <View className="w-9 h-9 bg-gray-100 rounded-full items-center justify-center mr-3">
+                <Ionicons name="lock-closed-outline" size={20} color="#6B7280" />
+              </View>
+              <Text className="flex-1 text-gray-900 font-medium">Cambiar Contrasena</Text>
               <Ionicons name="chevron-forward" size={20} color="#D1D5DB" />
             </TouchableOpacity>
           </View>
@@ -592,6 +639,59 @@ export default function ProfileScreen() {
                 <ActivityIndicator color="white" />
               ) : (
                 <Text className="text-white font-semibold text-lg">Enviar Invitacion</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Password Change Modal */}
+      <Modal visible={showPasswordModal} animationType="slide" transparent>
+        <View className="flex-1 bg-black/50 justify-end">
+          <View className="bg-white rounded-t-3xl p-6 pb-10">
+            <View className="flex-row items-center justify-between mb-6">
+              <Text className="text-xl font-bold text-gray-900">Cambiar Contrasena</Text>
+              <TouchableOpacity onPress={() => setShowPasswordModal(false)}>
+                <Ionicons name="close" size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+
+            <Text className="text-gray-600 mb-2">Contrasena actual</Text>
+            <TextInput
+              className="bg-gray-100 rounded-xl px-4 py-3 text-gray-900 mb-4"
+              placeholder="Ingresa tu contrasena actual"
+              secureTextEntry
+              value={currentPassword}
+              onChangeText={setCurrentPassword}
+            />
+
+            <Text className="text-gray-600 mb-2">Nueva contrasena</Text>
+            <TextInput
+              className="bg-gray-100 rounded-xl px-4 py-3 text-gray-900 mb-4"
+              placeholder="Minimo 6 caracteres"
+              secureTextEntry
+              value={newPassword}
+              onChangeText={setNewPassword}
+            />
+
+            <Text className="text-gray-600 mb-2">Confirmar nueva contrasena</Text>
+            <TextInput
+              className="bg-gray-100 rounded-xl px-4 py-3 text-gray-900 mb-6"
+              placeholder="Repite la nueva contrasena"
+              secureTextEntry
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+            />
+
+            <TouchableOpacity
+              className="bg-primary-600 py-4 rounded-xl items-center"
+              onPress={handleChangePassword}
+              disabled={isChangingPassword}
+            >
+              {isChangingPassword ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <Text className="text-white font-semibold text-lg">Cambiar Contrasena</Text>
               )}
             </TouchableOpacity>
           </View>

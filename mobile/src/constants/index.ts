@@ -46,6 +46,7 @@ export const API_ENDPOINTS = {
 
   // Settings
   SETTINGS_USER: '/api/v1/settings/user',
+  SETTINGS_USER_PASSWORD: '/api/v1/settings/user/password',
   SETTINGS_FAMILY: '/api/v1/settings/family',
   SETTINGS_FAMILY_MEMBERS: '/api/v1/settings/family/members',
   SETTINGS_FAMILY_INVITE: '/api/v1/settings/family/invite',

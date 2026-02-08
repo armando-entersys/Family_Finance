@@ -28,6 +28,13 @@ class UserSettingsResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class PasswordChange(BaseModel):
+    """Schema for changing user password."""
+
+    current_password: str = Field(..., min_length=1)
+    new_password: str = Field(..., min_length=6, max_length=128)
+
+
 class FamilySettingsUpdate(BaseModel):
     """Schema for updating family settings."""
 

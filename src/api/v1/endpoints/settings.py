@@ -14,13 +14,14 @@ from src.domain.models import User, Family
 from src.domain.schemas import (
     UserSettingsUpdate,
     UserSettingsResponse,
+    PasswordChange,
     FamilySettingsUpdate,
     FamilySettingsResponse,
     FamilyNameUpdate,
     FamilyInvite,
     FamilyMemberResponse,
 )
-from src.core.security import hash_password
+from src.core.security import hash_password, verify_password
 from src.services.email_service import email_service
 
 router = APIRouter(prefix="/settings", tags=["Settings"])
@@ -109,6 +110,27 @@ async def update_user_settings(
         preferred_currency=data.preferred_currency,
         language=data.language,
     )
+
+
+@router.post("/user/password", status_code=status.HTTP_200_OK)
+async def change_password(
+    data: PasswordChange,
+    current_user: CurrentUser,
+    db: DbSession,
+) -> dict:
+    """Change the current user's password."""
+    # Verify current password
+    if not verify_password(data.current_password, current_user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Contrasena actual incorrecta",
+        )
+
+    # Update password
+    current_user.password_hash = hash_password(data.new_password)
+    await db.flush()
+
+    return {"message": "Contrasena actualizada correctamente"}
 
 
 # ============================================================================

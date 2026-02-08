@@ -39,6 +39,7 @@ from .debt import (
 from .user_settings import (
     UserSettingsUpdate,
     UserSettingsResponse,
+    PasswordChange,
     FamilySettingsUpdate,
     FamilySettingsResponse,
     FamilyNameUpdate,
@@ -92,6 +93,7 @@ __all__ = [
     # Settings
     "UserSettingsUpdate",
     "UserSettingsResponse",
+    "PasswordChange",
     "FamilySettingsUpdate",
     "FamilySettingsResponse",
     "FamilyNameUpdate",

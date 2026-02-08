@@ -98,6 +98,14 @@ export const removeFamilyMember = async (memberId: string): Promise<void> => {
   await api.delete(API_ENDPOINTS.SETTINGS_FAMILY_MEMBER(memberId));
 };
 
+// Change password
+export const changePassword = async (currentPassword: string, newPassword: string): Promise<void> => {
+  await api.post(API_ENDPOINTS.SETTINGS_USER_PASSWORD, {
+    current_password: currentPassword,
+    new_password: newPassword,
+  });
+};
+
 // Update family name (admin only)
 export const updateFamilyName = async (name: string): Promise<FamilySettings> => {
   const response = await api.patch<FamilySettings>(`${API_ENDPOINTS.SETTINGS_FAMILY}/name`, { name });

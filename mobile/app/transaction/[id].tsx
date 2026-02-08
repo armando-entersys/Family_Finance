@@ -35,6 +35,9 @@ export default function TransactionDetailScreen() {
   const updateTransaction = useUpdateTransaction();
   const deleteTransaction = useDeleteTransaction();
 
+  // Image viewer state
+  const [showImageViewer, setShowImageViewer] = useState(false);
+
   // Edit modal state
   const [showEditModal, setShowEditModal] = useState(false);
   const [editType, setEditType] = useState<TransactionType>('EXPENSE');
@@ -187,11 +190,19 @@ export default function TransactionDetailScreen() {
               <Text className="text-sm font-medium text-gray-500 mb-2">
                 Recibo
               </Text>
-              <Image
-                source={{ uri: transaction.attachment_url }}
-                className="w-full h-48 rounded-2xl bg-gray-100"
-                resizeMode="cover"
-              />
+              <TouchableOpacity
+                onPress={() => setShowImageViewer(true)}
+                activeOpacity={0.8}
+              >
+                <Image
+                  source={{ uri: transaction.attachment_url }}
+                  className="w-full h-48 rounded-2xl bg-gray-100"
+                  resizeMode="cover"
+                />
+                <View className="absolute bottom-2 right-2 bg-black/50 rounded-full p-1.5">
+                  <Ionicons name="expand-outline" size={16} color="white" />
+                </View>
+              </TouchableOpacity>
             </View>
           )}
 
@@ -298,6 +309,27 @@ export default function TransactionDetailScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Image Viewer Modal */}
+      {transaction.attachment_url && (
+        <Modal visible={showImageViewer} animationType="fade" transparent>
+          <View className="flex-1 bg-black">
+            <TouchableOpacity
+              onPress={() => setShowImageViewer(false)}
+              className="absolute top-14 right-4 z-10 bg-white/20 rounded-full p-2"
+            >
+              <Ionicons name="close" size={28} color="white" />
+            </TouchableOpacity>
+            <View className="flex-1 items-center justify-center">
+              <Image
+                source={{ uri: transaction.attachment_url }}
+                className="w-full h-full"
+                resizeMode="contain"
+              />
+            </View>
+          </View>
+        </Modal>
+      )}
 
       {/* Edit Modal */}
       <Modal visible={showEditModal} animationType="slide" transparent>

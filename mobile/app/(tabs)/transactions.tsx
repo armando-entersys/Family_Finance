@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
-  FlatList,
+  SectionList,
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
@@ -13,7 +13,7 @@ import { useTransactionsInfinite, useDeleteTransaction } from '@/hooks/useTransa
 import { useFamilyMembers } from '@/hooks/useSettings';
 import { TransactionItem } from '@/components/transactions/TransactionItem';
 import { showSuccess, showError } from '@/utils/feedback';
-import type { TransactionType } from '@/types';
+import type { Transaction, TransactionType } from '@/types';
 
 const FILTERS: { label: string; value: TransactionType | undefined }[] = [
   { label: 'Todos', value: undefined },
@@ -43,6 +43,37 @@ export default function TransactionsScreen() {
   const deleteTransaction = useDeleteTransaction();
 
   const transactions = data?.pages.flatMap((page) => page.items) || [];
+
+  const sections = useMemo(() => {
+    const groups: Record<string, Transaction[]> = {};
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    for (const trx of transactions) {
+      const trxDate = new Date(trx.trx_date);
+      trxDate.setHours(0, 0, 0, 0);
+
+      let label: string;
+      if (trxDate.getTime() === today.getTime()) {
+        label = 'Hoy';
+      } else if (trxDate.getTime() === yesterday.getTime()) {
+        label = 'Ayer';
+      } else {
+        label = trxDate.toLocaleDateString('es-MX', {
+          day: 'numeric',
+          month: 'short',
+          year: trxDate.getFullYear() !== today.getFullYear() ? 'numeric' : undefined,
+        });
+      }
+
+      if (!groups[label]) groups[label] = [];
+      groups[label].push(trx);
+    }
+
+    return Object.entries(groups).map(([title, data]) => ({ title, data }));
+  }, [transactions]);
 
   const handleLoadMore = () => {
     if (hasNextPage && !isFetchingNextPage) {
@@ -188,9 +219,14 @@ export default function TransactionsScreen() {
           </TouchableOpacity>
         </View>
       ) : (
-        <FlatList
-          data={transactions}
+        <SectionList
+          sections={sections}
           keyExtractor={(item) => item.id}
+          renderSectionHeader={({ section: { title } }) => (
+            <View className="bg-gray-50 px-4 py-2">
+              <Text className="text-sm font-semibold text-gray-500">{title}</Text>
+            </View>
+          )}
           renderItem={({ item }) => (
             <TransactionItem
               transaction={item}
@@ -203,7 +239,7 @@ export default function TransactionsScreen() {
           ListFooterComponent={renderFooter}
           refreshing={isRefetching}
           onRefresh={refetch}
-          contentContainerStyle={{ backgroundColor: 'white' }}
+          stickySectionHeadersEnabled
         />
       )}
     </View>
