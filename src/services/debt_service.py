@@ -135,7 +135,7 @@ class DebtService:
                 amount_base=data.amount * debt.exchange_rate_fixed,
                 trx_date=data.payment_date or datetime.utcnow(),
                 type="DEBT",
-                description=f"Pago deuda: {debt.creditor}",
+                description=f"Pago deuda: {debt.creditor} [{debt.id}]",
             )
             self.db.add(transaction)
 

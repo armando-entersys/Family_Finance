@@ -215,7 +215,7 @@ export default function TransactionDetailScreen() {
               <View className="flex-1">
                 <Text className="text-sm text-gray-500">Descripcion</Text>
                 <Text className="text-gray-900 font-medium">
-                  {transaction.description || 'Sin descripcion'}
+                  {(transaction.description || 'Sin descripcion').replace(/\s*\[[a-f0-9-]+\]$/, '')}
                 </Text>
               </View>
             </View>

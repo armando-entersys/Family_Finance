@@ -54,7 +54,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
       {/* Details */}
       <View className="flex-1">
         <Text className="text-base font-medium text-gray-900" numberOfLines={1}>
-          {transaction.description || category?.name || 'Sin descripcion'}
+          {(transaction.description || category?.name || 'Sin descripcion').replace(/\s*\[[a-f0-9-]+\]$/, '')}
         </Text>
         <View className="flex-row items-center mt-0.5">
           <Text className="text-sm text-gray-500">

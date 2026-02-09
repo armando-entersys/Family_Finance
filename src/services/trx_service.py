@@ -5,6 +5,7 @@ Transaction service - Business logic for financial operations.
 from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Optional, Tuple
+import re
 import uuid
 
 from sqlalchemy import func, select, update
@@ -109,13 +110,21 @@ class TransactionService:
         """
         # Reverse debt payment if applicable
         if transaction.type == "DEBT" and transaction.description and transaction.description.startswith("Pago deuda: "):
-            creditor = transaction.description.replace("Pago deuda: ", "")
-            result = await self.db.execute(
-                select(Debt).where(
-                    Debt.family_id == transaction.family_id,
-                    Debt.creditor == creditor,
-                ).limit(1)
-            )
+            # Try to extract debt ID from description (format: "Pago deuda: Creditor [debt-uuid]")
+            debt_id_match = re.search(r'\[([a-f0-9-]+)\]', transaction.description)
+            if debt_id_match:
+                result = await self.db.execute(
+                    select(Debt).where(Debt.id == debt_id_match.group(1)).limit(1)
+                )
+            else:
+                # Fallback for old transactions without debt ID
+                creditor = transaction.description.replace("Pago deuda: ", "")
+                result = await self.db.execute(
+                    select(Debt).where(
+                        Debt.family_id == transaction.family_id,
+                        Debt.creditor == creditor,
+                    ).limit(1)
+                )
             debt = result.scalars().first()
             if debt:
                 new_balance = debt.current_balance + transaction.amount_original
