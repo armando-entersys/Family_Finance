@@ -7,7 +7,7 @@ from decimal import Decimal
 from typing import Optional, Tuple
 import uuid
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -118,9 +118,13 @@ class TransactionService:
             )
             debt = result.scalars().first()
             if debt:
-                debt.current_balance += transaction.amount_original
-                if debt.is_archived and debt.current_balance > 0:
-                    debt.is_archived = False
+                new_balance = debt.current_balance + transaction.amount_original
+                update_values = {"current_balance": new_balance}
+                if debt.is_archived and new_balance > 0:
+                    update_values["is_archived"] = False
+                await self.db.execute(
+                    update(Debt).where(Debt.id == debt.id).values(**update_values)
+                )
 
         # Reverse recurring expense execution if applicable
         if transaction.type == "EXPENSE" and transaction.description:
@@ -135,11 +139,15 @@ class TransactionService:
             recurring = result.scalars().first()
             if recurring:
                 # Revert next_due_date one period back
-                recurring.next_due_date = self._revert_due_date(
+                reverted_date = self._revert_due_date(
                     recurring.next_due_date,
                     recurring.frequency,
                 )
-                recurring.last_executed_date = None
+                await self.db.execute(
+                    update(RecurringExpense)
+                    .where(RecurringExpense.id == recurring.id)
+                    .values(next_due_date=reverted_date, last_executed_date=None)
+                )
 
         await self.db.delete(transaction)
         await self.db.flush()
