@@ -305,7 +305,7 @@ class TransactionService:
         for row in rows:
             summary[row.type] = row.total or Decimal("0")
 
-        summary["balance"] = summary["INCOME"] - summary["EXPENSE"] - summary["SAVING"]
+        summary["balance"] = summary["INCOME"] - summary["EXPENSE"] - summary["SAVING"] - summary["DEBT"]
 
         return summary
 
@@ -366,7 +366,7 @@ class TransactionService:
             members[uid]["transaction_count"] += row.count or 0
             if row.type == "INCOME":
                 members[uid]["income"] += amount
-            elif row.type == "EXPENSE":
+            elif row.type in ("EXPENSE", "DEBT"):
                 members[uid]["expense"] += amount
 
         for m in members.values():
@@ -408,8 +408,8 @@ class TransactionService:
         # Calculate percentage changes
         prev_income = float(previous.get("INCOME", 0))
         curr_income = float(current.get("INCOME", 0))
-        prev_expense = float(previous.get("EXPENSE", 0))
-        curr_expense = float(current.get("EXPENSE", 0))
+        prev_expense = float(previous.get("EXPENSE", 0)) + float(previous.get("DEBT", 0))
+        curr_expense = float(current.get("EXPENSE", 0)) + float(current.get("DEBT", 0))
 
         income_change_pct = (
             ((curr_income - prev_income) / prev_income * 100)
