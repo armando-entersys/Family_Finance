@@ -85,10 +85,13 @@ class DebtService:
 
         # If total_amount changes, recalculate current_balance
         # keeping the same total_paid (total_amount - current_balance)
-        if "total_amount" in update_data and "current_balance" not in update_data:
+        if "total_amount" in update_data and update_data["total_amount"] != debt.total_amount:
             total_paid = debt.total_amount - debt.current_balance
             new_total = update_data["total_amount"]
-            update_data["current_balance"] = max(new_total - total_paid, Decimal("0"))
+            new_balance = max(new_total - total_paid, Decimal("0"))
+            update_data["current_balance"] = new_balance
+            if new_balance == 0:
+                update_data["is_archived"] = True
 
         for field, value in update_data.items():
             setattr(debt, field, value)
