@@ -15,7 +15,7 @@ from src.domain.schemas import (
     RecurringExpenseExecute,
     TransactionResponse,
 )
-from src.domain.schemas.recurring_expense import AutoExecuteResponse
+from src.domain.schemas.recurring_expense import AutoExecuteResponse, ConvertOverdueResponse
 from src.services.recurring_expense_service import RecurringExpenseService
 
 router = APIRouter(prefix="/recurring-expenses", tags=["Recurring Expenses"])
@@ -100,6 +100,30 @@ async def auto_execute_recurring(
     return AutoExecuteResponse(
         executed_count=len(set(t.description for t in transactions)),
         transactions_created=len(transactions),
+    )
+
+
+@router.post("/convert-overdue", response_model=ConvertOverdueResponse)
+async def convert_overdue_to_debts(
+    current_user: CurrentUser,
+    db: DbSession,
+) -> ConvertOverdueResponse:
+    """
+    Convert overdue non-automatic recurring expenses into debts.
+    Expenses with next_due_date before the 1st of the current month are considered overdue.
+    """
+    if not current_user.family_id:
+        return ConvertOverdueResponse(converted_count=0)
+
+    service = RecurringExpenseService(db)
+    conversions = await service.convert_overdue_to_debts(
+        family_id=current_user.family_id,
+        user_id=current_user.id,
+    )
+
+    return ConvertOverdueResponse(
+        converted_count=len(conversions),
+        debts_created=conversions,
     )
 
 

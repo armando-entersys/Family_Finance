@@ -14,8 +14,8 @@ import { useTransactionsInfinite, useDeleteTransaction } from '@/hooks/useTransa
 import { useAuthStore } from '@/stores/authStore';
 import { TransactionItem } from '@/components/transactions/TransactionItem';
 import { formatCurrency } from '@/utils/format';
-import { showSuccess, showError } from '@/utils/feedback';
-import { autoExecuteRecurring } from '@/services/recurringExpenses';
+import { showSuccess, showError, showFeedback } from '@/utils/feedback';
+import { autoExecuteRecurring, convertOverdueToDebts } from '@/services/recurringExpenses';
 
 export default function HomeScreen() {
   const { user } = useAuthStore();
@@ -51,6 +51,18 @@ export default function HomeScreen() {
       .catch(() => {
         // Silently ignore - non-critical
       });
+    convertOverdueToDebts()
+      .then((result) => {
+        if (result.converted_count > 0) {
+          refetch();
+          showFeedback({
+            title: 'Gastos vencidos',
+            message: `${result.converted_count} gasto(s) recurrente(s) no cubierto(s) se convirtieron en deuda`,
+            type: 'warning',
+          });
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const handleDelete = async (id: string) => {

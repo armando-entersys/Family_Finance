@@ -97,3 +97,21 @@ export async function autoExecuteRecurring(): Promise<{ executed_count: number; 
   );
   return response.data;
 }
+
+// Convert overdue non-automatic recurring expenses into debts
+export interface ConvertOverdueResponse {
+  converted_count: number;
+  debts_created: Array<{
+    recurring_expense_name: string;
+    debt_id: string;
+    total_amount: number;
+    periods_missed: number;
+  }>;
+}
+
+export async function convertOverdueToDebts(): Promise<ConvertOverdueResponse> {
+  const response = await api.post<ConvertOverdueResponse>(
+    `${API_ENDPOINTS.RECURRING_EXPENSES}/convert-overdue`
+  );
+  return response.data;
+}

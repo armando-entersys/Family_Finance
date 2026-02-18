@@ -51,6 +51,8 @@ from .recurring_expense import (
     RecurringExpenseUpdate,
     RecurringExpenseResponse,
     RecurringExpenseExecute,
+    OverdueDebtConversion,
+    ConvertOverdueResponse,
 )
 from .category_budget import (
     CategoryBudgetCreate,
@@ -104,6 +106,8 @@ __all__ = [
     "RecurringExpenseUpdate",
     "RecurringExpenseResponse",
     "RecurringExpenseExecute",
+    "OverdueDebtConversion",
+    "ConvertOverdueResponse",
     # Category Budgets
     "CategoryBudgetCreate",
     "CategoryBudgetUpdate",

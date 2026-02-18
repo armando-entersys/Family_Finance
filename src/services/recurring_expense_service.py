@@ -10,12 +10,13 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.domain.models import RecurringExpense, Transaction
+from src.domain.models import RecurringExpense, Transaction, Debt
 from src.domain.schemas import (
     RecurringExpenseCreate,
     RecurringExpenseUpdate,
     RecurringExpenseExecute,
 )
+from src.domain.schemas.recurring_expense import OverdueDebtConversion
 
 
 class RecurringExpenseService:
@@ -204,6 +205,86 @@ class RecurringExpenseService:
         await self.db.refresh(transaction)
 
         return transaction
+
+    async def convert_overdue_to_debts(
+        self,
+        family_id: uuid.UUID,
+        user_id: uuid.UUID,
+    ) -> list[OverdueDebtConversion]:
+        """
+        Convert overdue non-automatic recurring expenses into debts.
+        An expense is overdue when next_due_date < 1st day of current month.
+        """
+        today = date.today()
+        first_of_month = date(today.year, today.month, 1)
+
+        # Query active, non-automatic expenses with next_due_date before this month
+        query = select(RecurringExpense).where(
+            RecurringExpense.family_id == family_id,
+            RecurringExpense.is_active == True,
+            RecurringExpense.is_automatic == False,
+            RecurringExpense.next_due_date < first_of_month,
+        )
+        result = await self.db.execute(query)
+        expenses = list(result.scalars().all())
+
+        conversions: list[OverdueDebtConversion] = []
+
+        for expense in expenses:
+            # Idempotency: check if a debt already exists for this expense
+            debt_description = f"Gasto recurrente vencido: {expense.name} [{expense.id}]"
+            existing_query = select(Debt).where(
+                Debt.family_id == family_id,
+                Debt.description == debt_description,
+                Debt.is_archived == False,
+            )
+            existing_result = await self.db.execute(existing_query)
+            if existing_result.scalar_one_or_none() is not None:
+                # Already converted, but still advance the date
+                while expense.next_due_date < first_of_month:
+                    expense.next_due_date = self._calculate_next_due_date(
+                        expense.next_due_date, expense.frequency
+                    )
+                continue
+
+            # Count missed periods
+            periods_missed = 0
+            temp_date = expense.next_due_date
+            while temp_date < first_of_month:
+                temp_date = self._calculate_next_due_date(temp_date, expense.frequency)
+                periods_missed += 1
+
+            total_amount = expense.amount * periods_missed
+
+            # Create debt
+            debt = Debt(
+                family_id=family_id,
+                creditor=expense.name,
+                description=debt_description,
+                debt_type="other",
+                total_amount=total_amount,
+                current_balance=total_amount,
+                currency_code=expense.currency_code,
+            )
+            self.db.add(debt)
+
+            # Advance next_due_date to current or future month
+            expense.next_due_date = temp_date
+
+            await self.db.flush()
+            await self.db.refresh(debt)
+
+            conversions.append(
+                OverdueDebtConversion(
+                    recurring_expense_name=expense.name,
+                    debt_id=debt.id,
+                    total_amount=total_amount,
+                    periods_missed=periods_missed,
+                )
+            )
+
+        await self.db.flush()
+        return conversions
 
     def _calculate_next_due_date(
         self,

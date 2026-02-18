@@ -73,3 +73,15 @@ class AutoExecuteResponse(BaseModel):
 
     executed_count: int
     transactions_created: int
+
+
+class OverdueDebtConversion(BaseModel):
+    recurring_expense_name: str
+    debt_id: uuid.UUID
+    total_amount: Decimal
+    periods_missed: int
+
+
+class ConvertOverdueResponse(BaseModel):
+    converted_count: int
+    debts_created: list[OverdueDebtConversion] = []
