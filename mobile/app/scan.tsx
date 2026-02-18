@@ -48,14 +48,15 @@ export default function ScanScreen() {
       const created = await createTransaction.mutateAsync(transaction);
 
       // Upload the receipt image as attachment
+      let photoSaved = false;
       if (imageUri && created.id) {
         try {
           await uploadAttachment.mutateAsync({
             transactionId: created.id,
             imageUri: imageUri,
           });
+          photoSaved = true;
         } catch (uploadError) {
-          // Don't fail the whole operation if attachment upload fails
           console.error('Attachment upload error:', uploadError);
         }
       }
@@ -63,7 +64,9 @@ export default function ScanScreen() {
       // Show success and navigate back
       showFeedback({
         title: 'Exito!',
-        message: 'El gasto se ha guardado correctamente.',
+        message: photoSaved
+          ? 'El gasto y la foto se guardaron correctamente.'
+          : 'El gasto se guardo pero la foto no se pudo subir.',
         type: 'success',
         buttons: [
           { text: 'Ver Transaccion', onPress: () => router.replace(`/transaction/${created.id}`) },

@@ -48,6 +48,7 @@ class Settings(BaseSettings):
 
     # Google Cloud Storage
     gcs_bucket_name: str = "family-finance-prod"
+    gcs_project_id: str = "mi-infraestructura-web"
     gcs_credentials_path: str = "/app/secrets/gcp-key.json"
 
     # CORS - include both case variants of domain (browsers lowercase domains)

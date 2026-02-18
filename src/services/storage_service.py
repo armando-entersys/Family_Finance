@@ -23,9 +23,14 @@ class StorageService:
     """
 
     def __init__(self):
-        self.client = storage.Client.from_service_account_json(
-            settings.gcs_credentials_path
-        )
+        import os
+
+        creds_path = settings.gcs_credentials_path
+        if creds_path and os.path.isfile(creds_path):
+            self.client = storage.Client.from_service_account_json(creds_path)
+        else:
+            # Fall back to default credentials (GCE metadata, env var, etc.)
+            self.client = storage.Client(project=settings.gcs_project_id)
         self.bucket = self.client.bucket(settings.gcs_bucket_name)
 
     def _compress_to_webp(
