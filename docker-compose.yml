@@ -26,6 +26,7 @@ services:
     networks:
       - traefik-public
       - internal-db-net
+      - scram-network
 
     # Resource limits (Critical for shared infrastructure)
     deploy:
@@ -148,3 +149,6 @@ networks:
     external: true
   internal-db-net:
     external: true
+  scram-network:
+    external: true
+    name: saas-platform_scram-network
