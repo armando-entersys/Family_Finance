@@ -10,6 +10,8 @@ from .auth import (
     UserResponse,
     UserUpdate,
     UserWithFamily,
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
 )
 from .transaction import (
     TransactionCreate,
@@ -70,6 +72,8 @@ __all__ = [
     "UserResponse",
     "UserUpdate",
     "UserWithFamily",
+    "ForgotPasswordRequest",
+    "ResetPasswordRequest",
     # Transactions
     "TransactionCreate",
     "TransactionUpdate",

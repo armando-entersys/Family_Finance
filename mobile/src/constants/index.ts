@@ -10,6 +10,8 @@ export const API_ENDPOINTS = {
   REFRESH: '/api/v1/auth/refresh',
   ME: '/api/v1/auth/me',
   COMPLETE_ONBOARDING: '/api/v1/auth/complete-onboarding',
+  FORGOT_PASSWORD: '/api/v1/auth/forgot-password',
+  RESET_PASSWORD: '/api/v1/auth/reset-password',
 
   // Transactions
   TRANSACTIONS: '/api/v1/transactions',

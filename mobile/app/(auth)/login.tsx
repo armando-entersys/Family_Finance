@@ -89,6 +89,14 @@ export default function LoginScreen() {
               }
             />
 
+            <View className="items-end">
+              <Link href="/(auth)/forgot-password" asChild>
+                <TouchableOpacity>
+                  <Text className="text-primary-600 text-sm">Olvidaste tu contrasena?</Text>
+                </TouchableOpacity>
+              </Link>
+            </View>
+
             {error && (
               <View className="bg-danger-50 border border-danger-200 rounded-xl p-3">
                 <Text className="text-danger-600 text-sm">{error}</Text>

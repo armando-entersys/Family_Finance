@@ -1,7 +1,9 @@
 """
-Authentication endpoints: Login, Register, Refresh Token.
+Authentication endpoints: Login, Register, Refresh Token, Password Reset.
 """
 
+import logging
+import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -12,20 +14,27 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.config import get_settings
 from src.core.security import (
     create_access_token,
+    create_password_reset_token,
     create_refresh_token,
     hash_password,
     verify_password,
+    verify_password_reset_token,
     verify_refresh_token,
 )
 from src.domain.models import Family, User
 from src.domain.schemas import (
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
     TokenRefresh,
     TokenResponse,
     UserRegister,
     UserResponse,
     UserUpdate,
 )
+from src.services.email_service import email_service
 from src.api.v1.dependencies import CurrentUser, DbSession
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 settings = get_settings()
@@ -126,7 +135,6 @@ async def refresh_token(
         )
 
     # Verify user still exists and is active
-    import uuid
     user_id = uuid.UUID(payload["sub"])
     result = await db.execute(
         select(User).where(User.id == user_id, User.is_active == True)
@@ -204,3 +212,65 @@ async def complete_onboarding(
     await db.commit()
     await db.refresh(current_user)
     return current_user
+
+
+@router.post("/forgot-password")
+async def forgot_password(
+    data: ForgotPasswordRequest,
+    db: DbSession,
+) -> dict:
+    """
+    Request a password reset email.
+    Always returns 200 to avoid revealing whether the email exists.
+    """
+    result = await db.execute(
+        select(User).where(
+            User.email == data.email.lower(),
+            User.is_active == True,
+        )
+    )
+    user = result.scalar_one_or_none()
+
+    if user:
+        token = create_password_reset_token(subject=user.id)
+        reset_url = f"https://app.family-finance.scram2k.com/reset-password?token={token}"
+        email_service.send_password_reset(to_email=user.email, reset_url=reset_url)
+        logger.info(f"Password reset email sent to {user.email}")
+    else:
+        logger.info(f"Password reset requested for non-existent email: {data.email}")
+
+    return {"message": "Si el correo esta registrado, recibiras un enlace para restablecer tu contrasena."}
+
+
+@router.post("/reset-password")
+async def reset_password(
+    data: ResetPasswordRequest,
+    db: DbSession,
+) -> dict:
+    """
+    Reset password using a valid reset token.
+    """
+    payload = verify_password_reset_token(data.token)
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Token invalido o expirado",
+        )
+
+    user_id = uuid.UUID(payload["sub"])
+    result = await db.execute(
+        select(User).where(User.id == user_id, User.is_active == True)
+    )
+    user = result.scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Token invalido o expirado",
+        )
+
+    user.password_hash = hash_password(data.new_password)
+    await db.commit()
+
+    logger.info(f"Password reset successful for user {user.email}")
+    return {"message": "Contrasena actualizada exitosamente."}

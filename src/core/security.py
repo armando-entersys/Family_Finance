@@ -173,3 +173,50 @@ def verify_refresh_token(token: str) -> Optional[dict[str, Any]]:
     if payload and payload.get("type") == "refresh":
         return payload
     return None
+
+
+def create_password_reset_token(
+    subject: str | uuid.UUID,
+    expires_delta: Optional[timedelta] = None,
+) -> str:
+    """
+    Create a JWT password reset token.
+
+    Args:
+        subject: User ID
+        expires_delta: Optional custom expiration time
+
+    Returns:
+        Encoded JWT string
+    """
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
+
+    to_encode: dict[str, Any] = {
+        "sub": str(subject),
+        "exp": expire,
+        "type": "password_reset",
+    }
+    return jwt.encode(
+        to_encode,
+        settings.secret_key,
+        algorithm=settings.jwt_algorithm,
+    )
+
+
+def verify_password_reset_token(token: str) -> Optional[dict[str, Any]]:
+    """
+    Verify a password reset token and return its payload.
+
+    Args:
+        token: JWT password reset token
+
+    Returns:
+        Token payload if valid password reset token, None otherwise
+    """
+    payload = decode_token(token)
+    if payload and payload.get("type") == "password_reset":
+        return payload
+    return None

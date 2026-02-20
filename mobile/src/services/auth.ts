@@ -148,4 +148,16 @@ export const completeOnboarding = async (): Promise<User> => {
   return response.data;
 };
 
+// Request password reset email
+export const forgotPassword = async (email: string): Promise<{ message: string }> => {
+  const response = await api.post<{ message: string }>(API_ENDPOINTS.FORGOT_PASSWORD, { email });
+  return response.data;
+};
+
+// Reset password with token
+export const resetPassword = async (token: string, new_password: string): Promise<{ message: string }> => {
+  const response = await api.post<{ message: string }>(API_ENDPOINTS.RESET_PASSWORD, { token, new_password });
+  return response.data;
+};
+
 export { getErrorMessage };

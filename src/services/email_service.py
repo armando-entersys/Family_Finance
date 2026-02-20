@@ -149,6 +149,72 @@ class EmailService:
 
         return self.send_email(to_email, subject, html_body, text_body)
 
+    def send_password_reset(self, to_email: str, reset_url: str) -> bool:
+        """Send password reset email with reset link."""
+        subject = "Restablecer contrasena - Family Finance"
+
+        html_body = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <style>
+                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                .header {{ background: linear-gradient(135deg, #4F46E5, #7C3AED); padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+                .header h1 {{ color: white; margin: 0; font-size: 24px; }}
+                .content {{ background: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; }}
+                .button {{ display: inline-block; background: #4F46E5; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 20px 0; }}
+                .footer {{ text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }}
+                .warning {{ background: #fef3c7; border: 1px solid #f59e0b; padding: 12px; border-radius: 6px; margin-top: 20px; font-size: 14px; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>Family Finance</h1>
+                </div>
+                <div class="content">
+                    <h2>Restablecer contrasena</h2>
+                    <p>Recibimos una solicitud para restablecer la contrasena de tu cuenta en Family Finance.</p>
+
+                    <p>Haz clic en el siguiente boton para crear una nueva contrasena:</p>
+
+                    <center>
+                        <a href="{reset_url}" class="button">Restablecer Contrasena</a>
+                    </center>
+
+                    <div class="warning">
+                        <strong>Importante:</strong> Este enlace expira en 15 minutos. Si no solicitaste este cambio, puedes ignorar este mensaje.
+                    </div>
+                </div>
+                <div class="footer">
+                    <p>Este correo fue enviado por Family Finance.<br>
+                    Si no solicitaste restablecer tu contrasena, puedes ignorar este mensaje.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+        text_body = f"""
+        Restablecer contrasena - Family Finance
+
+        Recibimos una solicitud para restablecer la contrasena de tu cuenta.
+
+        Haz clic en el siguiente enlace para crear una nueva contrasena:
+        {reset_url}
+
+        Este enlace expira en 15 minutos.
+
+        Si no solicitaste este cambio, puedes ignorar este mensaje.
+
+        --
+        Family Finance
+        """
+
+        return self.send_email(to_email, subject, html_body, text_body)
+
 
 # Singleton instance
 email_service = EmailService()

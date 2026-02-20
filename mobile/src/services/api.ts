@@ -32,7 +32,7 @@ const onTokenRefreshed = (token: string) => {
 api.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     // Skip auth header for login/register
-    const publicPaths = ['/api/v1/auth/login', '/api/v1/auth/register', '/health'];
+    const publicPaths = ['/api/v1/auth/login', '/api/v1/auth/register', '/api/v1/auth/forgot-password', '/api/v1/auth/reset-password', '/health'];
     if (publicPaths.some((path) => config.url?.includes(path))) {
       return config;
     }
