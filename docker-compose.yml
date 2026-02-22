@@ -24,7 +24,7 @@ services:
 
     # Network configuration
     networks:
-      - traefik-public
+      - traefik
       - internal-db-net
       - scram-network
 
@@ -50,7 +50,7 @@ services:
       # Enable Traefik
       - "traefik.enable=true"
       # Use traefik-public network for routing (container is in multiple networks)
-      - "traefik.docker.network=traefik-public"
+      - "traefik.docker.network=traefik"
 
       # Router configuration
       - "traefik.http.routers.family.rule=Host(`Family-Finance.scram2k.com`)"
@@ -100,7 +100,7 @@ services:
 
     # Network configuration
     networks:
-      - traefik-public
+      - traefik
 
     # Resource limits
     deploy:
@@ -122,7 +122,7 @@ services:
     # Traefik labels for reverse proxy
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network=traefik-public"
+      - "traefik.docker.network=traefik"
 
       # Router configuration - app subdomain (lowercase for Cloudflare compatibility)
       - "traefik.http.routers.family-web.rule=Host(`app.family-finance.scram2k.com`)"
@@ -145,7 +145,7 @@ services:
 
 # External networks (managed by infrastructure)
 networks:
-  traefik-public:
+  traefik:
     external: true
   internal-db-net:
     external: true
